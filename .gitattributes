@@ -1,0 +1,8 @@
+# O CSV de referencia e um export real do Bling, e o CRLF faz parte do que os
+# testes exercitam (PLANO.md secao 2). Sem esta linha o git normaliza as
+# quebras para LF ao gravar, e um clone em Linux/macOS receberia o fixture
+# alterado em silencio -- o parser aceita os dois, entao a suite continuaria
+# verde escondendo a diferenca.
+*.csv -text
+
+*.png binary
