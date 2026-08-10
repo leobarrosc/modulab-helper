@@ -1,0 +1,1329 @@
+:root {
+  --fundo: #ffffff;
+  --papel: #f6f6f6;
+  --tinta: #141414;
+  --tinta-fraca: #5f5f5f;
+  --borda: #d8d8d8;
+  --borda-forte: #b4b4b4;
+  --realce: #141414;
+  --alerta: #8a5a00;
+  --alerta-fundo: #fdf4e3;
+  --erro: #a11;
+  --vermelho: #c0322b;
+  --vermelho-fundo: #fdf1f0;
+
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #16181a;
+    --papel: #1e2124;
+    --tinta: #ececec;
+    --tinta-fraca: #a0a4a8;
+    --borda: #33383d;
+    --borda-forte: #4a5158;
+    --realce: #ececec;
+    --alerta: #e8b866;
+    --alerta-fundo: #2a2318;
+    --erro: #f08c8c;
+    --vermelho: #f28b84;
+    --vermelho-fundo: #2e1c1b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--tinta);
+  line-height: 1.55;
+}
+
+.shell {
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.cabecalho h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  margin: 0.3rem 0 0;
+  color: var(--tinta-fraca);
+  font-size: 0.95rem;
+}
+
+/* ---------- fluxo em passos ---------- */
+
+.icone {
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+.fluxo {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.8rem;
+}
+
+.passo {
+  border: 1px solid var(--borda);
+  border-radius: 11px;
+  background: var(--fundo);
+  overflow: hidden;
+}
+
+.passo.aberto {
+  border-color: var(--borda-forte);
+}
+
+.passo-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 0.7rem;
+}
+
+.passo-toque {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.7rem 0.9rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.passo-toque:hover:not(:disabled) {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.passo-numero {
+  flex: none;
+  width: 1.55rem;
+  height: 1.55rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--borda-forte);
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-fraca);
+}
+
+.passo.concluido .passo-numero {
+  background: var(--realce);
+  border-color: var(--realce);
+  color: var(--fundo);
+}
+
+.passo-icone {
+  color: var(--tinta-fraca);
+}
+
+.passo.aberto .passo-icone {
+  color: var(--tinta);
+}
+
+.passo-textos {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem 0.7rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.passo-textos strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.passo-resumo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--tinta-fraca);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.passo-chevron {
+  margin-left: auto;
+  color: var(--tinta-fraca);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+
+.passo:not(.aberto) .passo-chevron {
+  transform: rotate(0deg);
+}
+
+.passo-acoes {
+  display: flex;
+  gap: 0.4rem;
+  flex: none;
+}
+
+.passo-acoes button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.passo-conteudo {
+  padding: 0.2rem 1rem 1.1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.grupo h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.modos-tres {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+/* ---------- controles ---------- */
+
+button {
+  font: inherit;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--realce);
+  border-radius: 7px;
+  background: var(--realce);
+  color: var(--fundo);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--tinta);
+  border-color: var(--borda-forte);
+}
+
+input[type='search'],
+input[type='number'],
+select {
+  font: inherit;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 7px;
+  background: var(--fundo);
+  color: var(--tinta);
+}
+
+input[type='search'] {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+input[type='checkbox'] {
+  accent-color: var(--realce);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* ---------- importacao ---------- */
+
+.importar {
+  margin-top: 0.8rem;
+}
+
+.solta {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 3.5rem 1.5rem;
+  border: 2px dashed var(--borda-forte);
+  border-radius: 12px;
+  background: var(--papel);
+  text-align: center;
+}
+
+.solta.ativa {
+  border-color: var(--realce);
+  border-style: solid;
+}
+
+.solta-titulo {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.solta-sub {
+  margin: 0 0 0.4rem;
+  color: var(--tinta-fraca);
+  font-size: 0.85rem;
+}
+
+/* ---------- seletor da fonte do codigo ---------- */
+
+.fonte {
+  margin: 1.4rem 0 0;
+}
+
+.fonte-rotulo {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.fonte-opcoes {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.fonte-opcao {
+  flex: 1 1 15rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.fonte-opcao.ativa {
+  border-color: var(--realce);
+  box-shadow: inset 0 0 0 1px var(--realce);
+}
+
+.fonte-opcao input {
+  accent-color: var(--realce);
+  margin: 0;
+}
+
+.fonte-nome {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.fonte-ajuda {
+  grid-column: 2;
+  font-size: 0.78rem;
+  color: var(--tinta-fraca);
+  line-height: 1.35;
+}
+
+.produtos .fonte {
+  margin: 0 0 0.9rem;
+}
+
+.dica {
+  margin: 1.1rem 0 0;
+  color: var(--tinta-fraca);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.erro {
+  margin: 1rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--erro);
+  border-radius: 8px;
+  color: var(--erro);
+  font-size: 0.9rem;
+}
+
+.aviso {
+  margin: 0 0 0.6rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--alerta);
+  background: var(--alerta-fundo);
+  color: var(--alerta);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* ---------- produtos ---------- */
+
+.produtos {
+  margin-top: 0.8rem;
+}
+
+.produtos-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.arquivo {
+  display: grid;
+  min-width: 0;
+}
+
+.arquivo strong {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--tinta-fraca);
+  font-size: 0.82rem;
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.checa {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tabela-rolagem {
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tabela th,
+.tabela td {
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabela thead th {
+  position: sticky;
+  top: 0;
+  background: var(--papel);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--tinta-fraca);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tabela tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---------- cabecalho ordenavel ---------- */
+
+.tabela thead th:has(.ordenar) {
+  padding: 0;
+}
+
+.ordenar {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  /* A folha do navegador zera text-transform em <button>, entao o maiusculo
+     do cabecalho precisa ser herdado de volta explicitamente. */
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.ordenar:hover:not(:disabled) {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.num .ordenar {
+  justify-content: flex-end;
+}
+
+.ordenar-texto {
+  min-width: 0;
+}
+
+/* A seta fica reservada e invisivel para o texto nao pular ao ordenar. */
+.seta {
+  flex: none;
+  font-size: 0.6rem;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.seta.ativa {
+  opacity: 1;
+}
+
+.ordenar:hover .seta {
+  opacity: 0.45;
+}
+
+.ordenar:hover .seta.ativa {
+  opacity: 1;
+}
+
+.tabela tbody tr:not(.marcada) td {
+  opacity: 0.5;
+}
+
+/* Linha travada: nao rende etiqueta nenhuma e nao pode ser selecionada. */
+.tabela tbody tr.travada td {
+  opacity: 0.42;
+}
+
+.tabela tbody tr.travada input {
+  cursor: not-allowed;
+}
+
+.tabela td.num,
+.tabela th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-checa {
+  width: 1px;
+  padding-right: 0.3rem !important;
+}
+
+.col-qtd {
+  width: 1px;
+}
+
+.col-qtd input {
+  width: 4.2rem;
+  padding: 0.2rem 0.35rem;
+  text-align: right;
+}
+
+.col-etiquetas {
+  width: 1px;
+}
+
+/* ---------- coluna do codigo de barras ---------- */
+
+.col-codigo {
+  width: 1px;
+}
+
+.etiqueta-coluna {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--tinta-fraca);
+  opacity: 0.75;
+}
+
+.codigo {
+  font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-size: 0.85rem;
+}
+
+.codigo-falta {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--vermelho);
+  white-space: nowrap;
+}
+
+/* Produto sem valor na coluna escolhida: nao gera codigo de barras. */
+.tabela tbody tr.sem-codigo td {
+  background: var(--vermelho-fundo);
+}
+
+.tabela tbody tr.sem-codigo td:first-child {
+  box-shadow: inset 3px 0 0 var(--vermelho);
+}
+
+.nota-alerta {
+  color: var(--vermelho);
+  font-weight: 500;
+}
+
+.rende {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rende-zero {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--alerta);
+}
+
+.motivo {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--alerta);
+  line-height: 1.2;
+}
+
+.nota {
+  color: var(--tinta-fraca);
+  font-weight: 400;
+}
+
+.vazio {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--tinta-fraca);
+  font-size: 0.9rem;
+}
+
+.resumo {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+  font-size: 0.9rem;
+  color: var(--tinta-fraca);
+}
+
+.resumo-total strong {
+  color: var(--tinta);
+}
+
+/* ---------- oficina: inspetor + editor ---------- */
+
+.oficina {
+  display: grid;
+  grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+@media (max-width: 62rem) {
+  .oficina {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inspetor-acoes,
+.inspetor-historico {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.inspetor-acoes button,
+.inspetor-historico button {
+  flex: 1 1 auto;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+button.perigo {
+  border-color: var(--vermelho);
+  color: var(--vermelho);
+}
+
+.camadas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.camada {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  padding-right: 0.3rem;
+}
+
+.camada.ativa {
+  border-color: var(--realce);
+  box-shadow: inset 0 0 0 1px var(--realce);
+}
+
+.camada-nome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.camada-icone {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--borda-forte);
+  border-radius: 5px;
+  font-size: 0.7rem;
+}
+
+.camada-texto {
+  display: grid;
+  min-width: 0;
+}
+
+.camada-texto strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.camada-texto em {
+  font-size: 0.72rem;
+  font-style: normal;
+  color: var(--tinta-fraca);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.camada-botoes {
+  display: flex;
+  gap: 0.1rem;
+}
+
+.camada-botoes button {
+  padding: 0.15rem 0.3rem;
+  border: none;
+  background: transparent;
+  color: var(--tinta-fraca);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.camada-botoes button:hover {
+  color: var(--tinta);
+}
+
+.equivalente {
+  float: right;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.equivalente.miudo {
+  color: var(--vermelho);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.fracoes {
+  display: flex;
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+}
+
+.fracao {
+  flex: 1;
+  padding: 0.18rem 0.1rem;
+  border: 1px solid var(--borda);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--tinta-fraca);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fracao.ativa {
+  border-color: var(--realce);
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.salvar-linha {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.salvar-linha input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 7px;
+  background: var(--fundo);
+  color: var(--tinta);
+}
+
+.vazio-pequeno {
+  margin: 0.5rem 0;
+  font-size: 0.82rem;
+  color: var(--tinta-fraca);
+}
+
+/* ---------- canvas do editor ---------- */
+
+.editor-barra {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.editor-medida {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.editor-palco {
+  position: relative;
+  padding: 1.6rem 1rem 1rem 1.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--papel);
+}
+
+.editor-svg {
+  display: block;
+  width: 100%;
+  max-height: 30rem;
+  touch-action: none;
+  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.18));
+}
+
+.editor-papel {
+  fill: #ffffff;
+}
+
+.grade-fundo line {
+  stroke: #d6d6d6;
+  stroke-width: 0.08;
+}
+
+.editor-conteudo {
+  pointer-events: none;
+}
+
+.moldura {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 0.25;
+  cursor: move;
+}
+
+.moldura:hover {
+  stroke: rgb(80 130 220 / 0.7);
+}
+
+.moldura.selecionada {
+  stroke: rgb(40 100 210);
+  stroke-dasharray: 0.9 0.6;
+}
+
+.moldura.travada {
+  cursor: not-allowed;
+}
+
+.alca {
+  fill: #ffffff;
+  stroke: rgb(40 100 210);
+  stroke-width: 0.2;
+}
+
+.guia {
+  stroke: rgb(220 60 120);
+  stroke-width: 0.18;
+  stroke-dasharray: 1.4 0.9;
+  pointer-events: none;
+}
+
+.guia.centro {
+  stroke: rgb(255 140 0);
+}
+
+.regua {
+  position: absolute;
+  color: var(--tinta-fraca);
+  font-size: 0.55rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.regua-topo {
+  top: 0.35rem;
+  left: 1.9rem;
+  right: 1rem;
+  height: 1rem;
+}
+
+.regua-lado {
+  top: 1.6rem;
+  bottom: 1rem;
+  left: 0.35rem;
+  width: 1.3rem;
+}
+
+.regua .marca {
+  position: absolute;
+}
+
+.regua-topo .marca::before,
+.regua-lado .marca::before {
+  content: '';
+  position: absolute;
+  background: var(--borda-forte);
+}
+
+.regua-topo .marca::before {
+  bottom: -0.15rem;
+  left: 0;
+  width: 1px;
+  height: 0.25rem;
+}
+
+.regua-topo .marca.forte::before {
+  height: 0.45rem;
+}
+
+.regua-lado .marca::before {
+  right: -0.15rem;
+  top: 0;
+  height: 1px;
+  width: 0.25rem;
+}
+
+.regua-lado .marca.forte::before {
+  width: 0.45rem;
+}
+
+.regua em {
+  position: absolute;
+  font-style: normal;
+}
+
+.regua-topo em {
+  bottom: 0.3rem;
+  left: 0.12rem;
+}
+
+.regua-lado em {
+  top: -0.35rem;
+  right: 0.45rem;
+}
+
+.editor-dica {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--tinta-fraca);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- montagem: ajustes + previa ---------- */
+
+.montagem {
+  display: grid;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+@media (max-width: 60rem) {
+  .montagem {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grupo {
+  margin-bottom: 1.25rem;
+}
+
+.grupo h3 {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tinta-fraca);
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.preset {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tinta);
+  text-align: left;
+}
+
+.preset.ativo {
+  border-color: var(--realce);
+  box-shadow: inset 0 0 0 1px var(--realce);
+}
+
+.preset-nome {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.preset-medida {
+  font-size: 0.72rem;
+  color: var(--tinta-fraca);
+  font-variant-numeric: tabular-nums;
+}
+
+.modos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.modo {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tinta);
+  text-align: left;
+}
+
+.modo.ativo {
+  border-color: var(--realce);
+  box-shadow: inset 0 0 0 1px var(--realce);
+}
+
+.modo-nome {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.modo-ajuda {
+  font-size: 0.7rem;
+  color: var(--tinta-fraca);
+  line-height: 1.25;
+}
+
+.opcoes-etiqueta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.6rem;
+}
+
+.problemas {
+  margin-top: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--vermelho);
+  background: var(--vermelho-fundo);
+  border-radius: 8px;
+}
+
+.problemas .erro-grade {
+  margin: 0;
+}
+
+.problemas .erro-grade + .erro-grade {
+  margin-top: 0.4rem;
+}
+
+.derivado-sobra {
+  font-size: 0.74rem;
+  color: var(--alerta);
+}
+
+.linha-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.campo {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.campo-largo {
+  grid-column: 1 / -1;
+}
+
+.campo-rotulo {
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+}
+
+.campo-ajuda {
+  font-size: 0.72rem;
+  color: var(--tinta-fraca);
+  line-height: 1.3;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.derivado {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 9px;
+  background: var(--papel);
+}
+
+.derivado.invalido {
+  border-color: var(--vermelho);
+  background: var(--vermelho-fundo);
+}
+
+.derivado-rotulo {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tinta-fraca);
+}
+
+.derivado-valor {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.derivado-nota {
+  font-size: 0.74rem;
+  color: var(--tinta-fraca);
+}
+
+.erro-grade {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--vermelho);
+  line-height: 1.4;
+}
+
+/* ---------- previa da folha ---------- */
+
+.folha {
+  position: sticky;
+  top: 1rem;
+}
+
+.folha-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.folha-topo h3 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tinta-fraca);
+}
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.paginacao button {
+  padding: 0.15rem 0.55rem;
+  line-height: 1.2;
+}
+
+.paginacao-texto {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-fraca);
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.folha-palco {
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--papel);
+  min-height: 22rem;
+}
+
+.folha-svg {
+  max-width: 100%;
+  max-height: 34rem;
+  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.18));
+}
+
+.folha-vazia {
+  margin: 0;
+  color: var(--tinta-fraca);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.folha-legenda {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--tinta-fraca);
+}
+
+/* A previa e sempre em preto sobre branco: e o papel, nao a interface. */
+.svg-papel {
+  fill: #ffffff;
+}
+
+.svg-celula {
+  fill: none;
+  stroke: #141414;
+  stroke-width: 0.25;
+}
+
+.svg-celula-vazia {
+  fill: none;
+  stroke: #b8b8b8;
+  stroke-width: 0.2;
+  stroke-dasharray: 1.2 1.2;
+}
+
+/* Diagnostico de tela: nunca entra na DrawOp[], logo nunca sai impresso. */
+.svg-aviso {
+  fill: rgb(192 50 43 / 0.14);
+  stroke: rgb(192 50 43 / 0.85);
+  stroke-width: 0.35;
+}
+
+.svg-aviso.forte {
+  fill: rgb(192 50 43 / 0.3);
+}
+
+/* ---------- exportacao ---------- */
+
+.exportar {
+  margin-top: 2rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 11px;
+  background: var(--papel);
+}
+
+.exportar-resumo {
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+}
+
+.exportar-resumo strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.exportar-botoes {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.exportar-botoes button {
+  min-width: 9rem;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.95rem;
+}
+
+.exportar-nota {
+  margin: 0.8rem 0 0;
+  font-size: 0.82rem;
+  color: var(--tinta-fraca);
+  line-height: 1.45;
+  max-width: 46rem;
+}
+
+.exportar-nota em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+.exportar .aviso,
+.exportar .problemas {
+  margin-top: 0.8rem;
+}
+
+/* ---------- rodape ---------- */
+
+.rodape {
+  margin-top: 2.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--borda);
+  color: var(--tinta-fraca);
+  font-size: 0.85rem;
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+*.local
+.DS_Store
+Thumbs.db
+
+# Configuracao local do Claude Code (por maquina, nao versionada)
+.claude/settings.local.json
