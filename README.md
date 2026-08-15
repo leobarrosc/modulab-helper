@@ -1,10 +1,115 @@
 # Modulab Helper
 
-Extensão Chromium (Chrome / Edge) que transforma o CSV de produtos exportado do
-Bling em folhas de etiquetas com código de barras e QR Code, prontas para
-impressão em etiquetadora.
+Extensão Chromium (Chrome / Edge) que trabalha em cima do CSV de produtos
+exportado do Bling, em duas abas:
 
-O plano completo de arquitetura está em [PLANO.md](PLANO.md).
+- **Etiquetas** — folhas de etiquetas com código de barras e QR Code, prontas
+  para impressão em etiquetadora.
+- **Estante** — o mapa da prateleira de filamentos e a conferência do que falta
+  repor.
+
+As duas compartilham o mesmo CSV importado, e nada além dele.
+
+## A estante
+
+A prateleira fica à vista do cliente e, conforme vendem, é preciso repor. O
+problema nunca foi ter estoque — era **saber qual filamento sumiu da
+prateleira** olhando para setenta caixas parecidas.
+
+O módulo monta um mapa determinístico da estante a partir do CSV, deixa conferir
+célula a célula na tela enquanto se caminha na frente dela, e no fim entrega a
+lista do que pegar no depósito.
+
+### Como o mapa é montado
+
+Cada célula recebe um produto, ordenado por **Marca › Tipo › Cor**, preenchendo
+da esquerda para a direita e de cima para baixo. **Marca nova sempre começa um
+andar novo**, mesmo sobrando coluna: é assim que a prateleira se lê de longe —
+um andar, uma marca.
+
+A **ordem das marcas** e a **ordem dos tipos** são suas: arraste para reordenar,
+ou use os botões de subir e descer. Como marca nova sempre quebra andar, a ordem
+das marcas é o que decide qual delas fica na altura dos olhos. Um nome que
+apareça num export futuro entra no fim da lista, sem reorganizar a prateleira
+sozinho.
+
+Grafias diferentes da mesma marca são tratadas como uma só: o Bling aceita
+`MultFila` e `MULTFILA` no mesmo cadastro, e os dois vão para o mesmo andar.
+
+A **ordem das cores** não é alfabética. Preto e Branco vêm primeiro, por serem
+os mais procurados; depois as cores seguem a ordem do arco-íris (vermelho →
+laranja → amarelo → verde → azul → violeta → rosa), calculada pelo ângulo de
+matiz. Multicolor e efeitos — marmorizado, rainbow, tricolor — não têm matiz
+única e fecham a fila. Cada célula mostra uma **bolinha da cor**: na frente da
+estante se procura a cor, não o texto.
+
+### Tipo e cor são deduzidos — e dá para corrigir
+
+O Bling não tem campo de "tipo de filamento" nem de "cor". O tipo sai dos níveis
+2 e 3 da categoria (`Filamentos>>PLA>>Matte/Fosco` → *PLA Matte/Fosco*) e a cor
+é o que sobra da descrição depois de tirar o ruído.
+
+Ruído é bastante coisa: cada marca cerca o nome da cor com a linha comercial
+(`Basic`, `Premium Ht High Speed`, `Lite`, `Hyper`, `HF`) e com a embalagem
+(`Peso:1KG`, `ROLO`, `1.75MM`, `DER 4`, `REFIL`). `Pla Basic Amarelo Peso:1KG`
+vira **Amarelo**; `MP-FILAMENTO 3D - PETG VERDE 1KG (1.75MM) DER 4` vira
+**Verde**. Uma palavra que também é nome de cor nunca é descartada, e dá para
+acrescentar as suas palavras a ignorar.
+
+Filamentos que **mudam de cor ao longo do rolo** — rainbow, dual color,
+tricolor, marmorizado — não têm uma matiz que os represente. Eles são
+reconhecidos como tal e ficam juntos no fim, em vez de serem arquivados sob a
+primeira cor que aparece no nome.
+
+A categoria do Bling responde a uma pergunta comercial: `PLA Especiais` junta
+marmorizado e madeira porque vendem parecido, não porque moram lado a lado. Por
+isso há uma tabela para reescrever marca, tipo e cor à mão — **a correção fica
+salva pelo código do produto** e sobrevive ao próximo export. Apagar o campo
+volta ao valor deduzido.
+
+### Várias estantes
+
+Cada estante tem as suas medidas, a sua categoria e **as suas marcas**: dá para
+deixar MultFila e Creality numa e o resto noutra. Nenhuma marca escolhida
+significa "todas entram". A troca entre estantes fica no topo da aba, a um
+clique.
+
+Andares podem ser **tirados de uso** — a prateleira que você não alcança, a de
+baixo que é só caixa fechada. Elas continuam desenhadas no mapa, hachuradas, e
+a alocação simplesmente pula por cima.
+
+E cada andar pode ter **conteúdo reservado**: *"o andar 1 só vai ter PLA preto,
+branco e matte"*. A reserva vale nos dois sentidos — o andar só recebe o que
+você marcou, e o que você marcou não aparece em nenhum outro andar. Marcar só as
+cores limita a cor e aceita qualquer marca e tipo.
+
+### Frente maior para quem vende mais
+
+O PLA Preto não precisa dividir a prateleira em pé de igualdade com uma cor que
+sai uma vez por mês. Os botões **−** e **+** no canto de cada célula esticam o
+produto por várias colunas: o Preto em 1.1, 1.2 e 1.3 vira um bloco só.
+
+A conferência acompanha: um bloco de 3 colunas com 2 rolos em fila tem 6
+caixinhas, não 2. E o bloco nunca é partido entre dois andares — se não cabe no
+que sobrou, desce inteiro.
+
+A **ordem das cores** também é arrastável, e vale para a estante inteira. Se um
+tipo específico pedir outra sequência, dá para criar uma exceção só para aquele
+par marca + tipo.
+
+### A conferência
+
+Cada célula cabe **dois rolos do mesmo produto**: o da frente é o mostruário, o
+de trás é a reposição imediata. São duas caixas de seleção por célula, então dá
+para registrar "só sobrou um" — e a lista de reposição já sabe que falta um.
+
+A conferência fica guardada e sobrevive a fechar a aba. *Nova conferência* zera
+tudo e carimba a data. Produto **sem estoque no depósito sai da estante** e os
+seguintes sobem uma posição.
+
+No fim, a lista de reposição sai na ordem de leitura da estante — que é a ordem
+em que se caminha na frente dela — com posição, código, tipo, cor, quantos
+faltam e quantos há no depósito. Dá para imprimir e levar junto.
 
 ## Estado atual
 
@@ -85,7 +190,7 @@ entram e quantas etiquetas de cada um.
 **Uma etiqueta por unidade em estoque** é o padrão: o código 261 com 42 rolos
 rende 42 etiquetas, e o campo `Qtd.` multiplica isso (2 → 84). Dá para desligar
 no botão *Multiplicar pelo estoque*. Produtos com estoque zerado começam
-desmarcados. As regras de borda estão em [PLANO.md](PLANO.md#quantas-etiquetas-cada-produto-rende).
+desmarcados.
 
 **O tamanho da etiqueta é sempre calculado**, nunca digitado: escolha o papel e
 quantas colunas × linhas cabem nele, e a etiqueta se redimensiona. Uma A4 em
@@ -93,15 +198,33 @@ quantas colunas × linhas cabem nele, e a etiqueta se redimensiona. Uma A4 em
 folha. Ainda **não há persistência** — a opção de gravar um papel como padrão
 chega na Fase 6.
 
-## Requisitos
-
-Node 20+ (testado com Node 24 / npm 11).
-
 ## Instalação
+
+### Opção 1 — baixar pronto (recomendado para quem só quer usar)
+
+Não precisa instalar Node nem rodar nenhum comando.
+
+1. Baixe `modulab-helper-dist.zip` na [última release](https://github.com/leobarrosc/modulab-helper/releases/latest).
+2. Descompacte o zip — vira uma pasta com `manifest.json` dentro.
+3. Abra `chrome://extensions` (ou `edge://extensions`).
+4. Ative **Modo do desenvolvedor**.
+5. Clique em **Carregar sem compactação** e selecione a pasta descompactada.
+6. Clique no ícone da extensão na barra de ferramentas: o app abre em uma aba nova.
+
+Clicar no ícone de novo com a aba já aberta apenas foca a aba existente, em vez
+de abrir duplicatas.
+
+### Opção 2 — build a partir do código-fonte
+
+Para quem vai mexer no código. Requer Node 20+ (testado com Node 24 / npm 11).
 
 ```bash
 npm install
+npm run build
 ```
+
+Isso gera a pasta `dist/`. Carregue-a no navegador seguindo os passos 3–6 da
+Opção 1 acima, selecionando `dist/` em vez da pasta descompactada.
 
 ## Desenvolvimento
 
@@ -110,24 +233,7 @@ npm run dev
 ```
 
 O `@crxjs/vite-plugin` escreve e observa a pasta `dist/` com HMR. Carregue essa
-pasta no navegador (ver abaixo) e as alterações recarregam sozinhas.
-
-## Build de produção
-
-```bash
-npm run build
-```
-
-## Carregar no navegador
-
-1. Abra `chrome://extensions` (ou `edge://extensions`).
-2. Ative **Modo do desenvolvedor**.
-3. Clique em **Carregar sem compactação**.
-4. Selecione a pasta **`dist/`** — não a raiz do projeto.
-5. Clique no ícone da extensão na barra de ferramentas: o app abre em uma aba nova.
-
-Clicar no ícone de novo com a aba já aberta apenas foca a aba existente, em vez
-de abrir duplicatas.
+pasta no navegador (ver Opção 1 acima) e as alterações recarregam sozinhas.
 
 ## Scripts
 
@@ -145,8 +251,9 @@ de abrir duplicatas.
 src/
 ├── background/   service worker — só abre a aba
 ├── core/         lógica pura, sem DOM, testável
-│   └── csv/      detecção de encoding/delimitador, parser, limpeza
-├── app/          a aba: React + editor de etiquetas
+│   ├── csv/      detecção de encoding/delimitador, parser, limpeza
+│   └── estante/  classificação, ordem das cores, alocação, conferência
+├── app/          a aba: React + editor de etiquetas + mapa da estante
 │   ├── store.ts  estado (zustand)
 │   └── components/
 └── assets/icons/ ícones gerados por script

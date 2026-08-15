@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: rm -rf dist
+      - run: npm run build
+
+      - name: Empacotar dist/
+        run: |
+          cd dist
+          zip -r ../modulab-helper-dist.zip .
+
+      - name: Guardar artefato do build
+        uses: actions/upload-artifact@v4
+        with:
+          name: modulab-helper-dist
+          path: modulab-helper-dist.zip
+
+      - name: Publicar release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: modulab-helper-dist.zip
+          generate_release_notes: true

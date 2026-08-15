@@ -7,3 +7,7 @@ Thumbs.db
 
 # Configuracao local do Claude Code (por maquina, nao versionada)
 .claude/settings.local.json
+
+# Documentos internos de planejamento/instrucoes, nao fazem parte do repo publico
+PLANO.md
+CLAUDE.md
