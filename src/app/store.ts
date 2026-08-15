@@ -29,11 +29,36 @@ import {
 } from './storeEtiqueta'
 import { lerModelo } from '@/core/etiqueta/serializar'
 import {
+  conferenciasDoEstado,
+  correcoesDoEstado,
+  estantesDoEstado,
+  largurasDoEstado,
   modeloDoEstado,
+  ordemCoresDoEstado,
+  ordemCoresPorGrupoDoEstado,
+  ordemMarcasDoEstado,
+  ordemTiposDoEstado,
+  palavrasIgnoradasDoEstado,
   salvosDoEstado,
   type EstadoPersistido,
   type ModeloSalvo,
 } from './armazenamento'
+import {
+  comItensNovos,
+  criarEstante,
+  iniciarConferencia,
+  marcarCelula,
+  moverItem,
+  moverItemParaIndice,
+  LIMITES_ESTANTE,
+  ordemCoresPadrao,
+  podarConferencia,
+  regraVazia,
+  type CorrecaoClassificacao,
+  type EstadoConferencia,
+  type RegraAndar,
+  type TemplateEstante,
+} from '@/core/estante'
 import {
   acharPreset,
   calcularGrade,
@@ -61,6 +86,19 @@ const COLUNAS_PREFERIDAS = [
 
 const COLUNA_SITUACAO = 'Situação'
 const COLUNA_CATEGORIA = 'Categoria do produto'
+
+/** As duas missoes do app. Compartilham o CSV e mais nada. */
+export type Aba = 'etiquetas' | 'estante'
+
+/** Os dois eixos com ordem escolhida a mao. A mecanica e a mesma nos dois. */
+export type EixoOrdem = 'marcas' | 'tipos'
+
+const CHAVE_ORDEM: Record<EixoOrdem, 'ordemMarcas' | 'ordemTipos'> = {
+  marcas: 'ordemMarcas',
+  tipos: 'ordemTipos',
+}
+
+export const ABAS: readonly Aba[] = ['etiquetas', 'estante']
 
 export interface EstadoApp {
   planilha: Planilha | null
@@ -102,6 +140,28 @@ export interface EstadoApp {
   salvos: ModeloSalvo[]
   /** Avisos da ultima importacao/restauracao de modelo. */
   avisosModelo: string[]
+
+  /** Qual das duas missoes esta na tela: imprimir etiqueta ou conferir estante. */
+  abaAtiva: Aba
+  /** Estantes cadastradas. */
+  estantes: TemplateEstante[]
+  estanteAtivaId: string | null
+  /** Correcoes manuais de Marca/Tipo/Cor, por Código do produto. */
+  correcoesClassificacao: Record<string, CorrecaoClassificacao>
+  /** Ordem dos tipos de filamento, arrastavel pelo usuario. */
+  ordemTipos: string[]
+  /** Ordem das marcas: como marca nova quebra andar, e ela que decide os andares. */
+  ordemMarcas: string[]
+  /** Ordem das cores da estante inteira, por chave de cor. */
+  ordemCores: string[]
+  /** Excecoes de ordem de cor por `chaveGrupo(marca, tipo)`. */
+  ordemCoresPorGrupo: Record<string, string[]>
+  /** Palavras que o usuario mandou ignorar ao extrair a cor da descricao. */
+  palavrasIgnoradas: string[]
+  /** Quantas colunas cada produto ocupa, por Código. Ausente = 1. */
+  largurasCelula: Record<string, number>
+  /** Conferencia em andamento, por id de estante. */
+  conferencias: Record<string, EstadoConferencia>
 
   importar: (arquivo: File) => Promise<void>
   descartar: () => void
@@ -149,7 +209,49 @@ export interface EstadoApp {
   excluirSalvo: (nome: string) => void
   importarModeloJson: (texto: string, nomeArquivo: string) => void
   dispensarAvisosModelo: () => void
+
+  setAbaAtiva: (aba: Aba) => void
+  novaEstante: () => void
+  atualizarEstante: (id: string, mudanca: Partial<Omit<TemplateEstante, 'id'>>) => void
+  excluirEstante: (id: string) => void
+  selecionarEstante: (id: string) => void
+  corrigirClassificacao: (codigo: string, mudanca: Partial<CorrecaoClassificacao>) => void
+  limparCorrecao: (codigo: string) => void
+  /** Acrescenta ao fim os nomes que apareceram no CSV e ainda nao tinham lugar. */
+  sincronizarOrdem: (eixo: EixoOrdem, presentes: string[]) => void
+  mover: (eixo: EixoOrdem, nome: string, delta: number) => void
+  moverParaIndice: (eixo: EixoOrdem, nome: string, destino: number) => void
+  marcarCelulaConferencia: (
+    estanteId: string,
+    codigo: string,
+    indicePosicao: number,
+    marcado: boolean,
+    capacidade: number,
+  ) => void
+  novaConferencia: (estanteId: string) => void
+  /** Descarta marcacoes de produtos que sairam da estante. */
+  podarConferenciaDaEstante: (estanteId: string, codigosNoPlano: ReadonlySet<string>) => void
+
+  moverCor: (chave: string, delta: number, grupo?: string) => void
+  moverCorParaIndice: (chave: string, destino: number, grupo?: string) => void
+  /** Cria a excecao de ordem de cor do grupo, copiando a ordem geral. */
+  criarOrdemCoresDoGrupo: (grupo: string) => void
+  /** Remove a excecao: o grupo volta a seguir a ordem geral. */
+  limparOrdemCoresDoGrupo: (grupo: string) => void
+  setPalavrasIgnoradas: (palavras: string[]) => void
+  alternarMarcaPermitida: (estanteId: string, marca: string) => void
+  alternarAndarBloqueado: (estanteId: string, andar: number) => void
+  /** Quantas colunas o produto ocupa. 1 volta ao padrao. */
+  setLarguraCelula: (codigo: string, largura: number) => void
+  definirRegraAndar: (estanteId: string, regra: RegraAndar) => void
+  limparRegraAndar: (estanteId: string, andar: number) => void
 }
+
+/**
+ * A estante de fabrica, criada uma vez. Se o storage trouxer estantes, esta e
+ * substituida na hidratacao.
+ */
+const ESTANTE_INICIAL = criarEstante()
 
 export const useApp = create<EstadoApp>((set, get) => ({
   planilha: null,
@@ -176,9 +278,32 @@ export const useApp = create<EstadoApp>((set, get) => ({
   campoSelecionado: null,
   encaixe: OPCOES_ENCAIXE_PADRAO,
   corte: CORTE_PADRAO,
-  passosAbertos: { importar: true, produtos: true, etiqueta: true, folha: true },
+  passosAbertos: {
+    importar: true,
+    produtos: true,
+    etiqueta: true,
+    folha: true,
+    // Na estante o que interessa e o mapa e a lista: os ajustes ficam
+    // recolhidos ate alguem precisar deles.
+    'estante-template': false,
+    'estante-correcao': false,
+    'estante-mapa': true,
+    'estante-reposicao': true,
+  },
   salvos: [],
   avisosModelo: [],
+
+  abaAtiva: 'etiquetas',
+  estantes: [ESTANTE_INICIAL],
+  estanteAtivaId: ESTANTE_INICIAL.id,
+  correcoesClassificacao: {},
+  ordemTipos: [],
+  ordemMarcas: [],
+  ordemCores: ordemCoresPadrao(),
+  ordemCoresPorGrupo: {},
+  palavrasIgnoradas: [],
+  largurasCelula: {},
+  conferencias: {},
 
   async importar(arquivo) {
     set({ carregando: true, erro: null })
@@ -445,6 +570,15 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   hidratar(estado) {
     const restaurado = modeloDoEstado(estado)
+
+    // `null` = a chave nunca foi gravada, e a estante de fabrica continua
+    // valendo. Uma lista vazia gravada e decisao do usuario e e respeitada.
+    const estantes = estantesDoEstado(estado)
+    const ativa =
+      estantes && estado.estanteAtivaId && estantes.some((e) => e.id === estado.estanteAtivaId)
+        ? estado.estanteAtivaId
+        : (estantes?.[0]?.id ?? null)
+
     set({
       // O que estava gravado vale como padrao da sessao nova. So entra o que
       // sobreviver a validacao; o resto fica no valor de fabrica.
@@ -464,6 +598,19 @@ export const useApp = create<EstadoApp>((set, get) => ({
       ...(estado.corte ? { corte: { ...CORTE_PADRAO, ...estado.corte } } : {}),
       ...(restaurado ? { modelo: restaurado } : {}),
       salvos: salvosDoEstado(estado),
+
+      ...(estado.abaAtiva === 'etiquetas' || estado.abaAtiva === 'estante'
+        ? { abaAtiva: estado.abaAtiva }
+        : {}),
+      ...(estantes ? { estantes, estanteAtivaId: ativa } : {}),
+      correcoesClassificacao: correcoesDoEstado(estado),
+      ordemTipos: ordemTiposDoEstado(estado),
+      ordemMarcas: ordemMarcasDoEstado(estado),
+      ordemCores: ordemCoresDoEstado(estado),
+      ordemCoresPorGrupo: ordemCoresPorGrupoDoEstado(estado),
+      palavrasIgnoradas: palavrasIgnoradasDoEstado(estado),
+      largurasCelula: largurasDoEstado(estado),
+      conferencias: conferenciasDoEstado(estado),
     })
   },
 
@@ -524,7 +671,226 @@ export const useApp = create<EstadoApp>((set, get) => ({
   dispensarAvisosModelo() {
     set({ avisosModelo: [] })
   },
+
+  setAbaAtiva(aba) {
+    set({ abaAtiva: aba })
+  },
+
+  novaEstante() {
+    const nova = criarEstante({ nome: `Estante ${get().estantes.length + 1}` })
+    set({ estantes: [...get().estantes, nova], estanteAtivaId: nova.id })
+  },
+
+  atualizarEstante(id, mudanca) {
+    // Mudar a capacidade nao migra a conferencia: ela e ajustada na leitura,
+    // entao aumentar acrescenta posicoes desmarcadas e diminuir corta as que
+    // sobram, sem tocar no que ja foi conferido.
+    set({
+      estantes: get().estantes.map((e) => (e.id === id ? { ...e, ...mudanca, id } : e)),
+    })
+  },
+
+  excluirEstante(id) {
+    const restantes = get().estantes.filter((e) => e.id !== id)
+    const { [id]: _removida, ...conferencias } = get().conferencias
+    set({
+      estantes: restantes,
+      conferencias,
+      estanteAtivaId:
+        get().estanteAtivaId === id ? (restantes[0]?.id ?? null) : get().estanteAtivaId,
+    })
+  },
+
+  selecionarEstante(id) {
+    set({ estanteAtivaId: id })
+  },
+
+  corrigirClassificacao(codigo, mudanca) {
+    if (!codigo) return
+    const atual = get().correcoesClassificacao[codigo] ?? {}
+    const correcao: CorrecaoClassificacao = { ...atual, ...mudanca }
+
+    // Campo apagado volta ao derivado; correcao sem nada nao ocupa o storage.
+    for (const chave of ['marca', 'tipo', 'cor'] as const) {
+      if (correcao[chave] === undefined || correcao[chave]?.trim() === '') delete correcao[chave]
+    }
+
+    const proximo = { ...get().correcoesClassificacao }
+    if (Object.keys(correcao).length === 0) delete proximo[codigo]
+    else proximo[codigo] = correcao
+
+    set({ correcoesClassificacao: proximo })
+  },
+
+  limparCorrecao(codigo) {
+    const { [codigo]: _removida, ...resto } = get().correcoesClassificacao
+    set({ correcoesClassificacao: resto })
+  },
+
+  sincronizarOrdem(eixo, presentes) {
+    const chave = CHAVE_ORDEM[eixo]
+    const proxima = comItensNovos(get()[chave], presentes)
+    // `comItensNovos` devolve o mesmo array quando nao ha novidade -- comparar
+    // por identidade evita um `set` inutil e o laco de render que viria dele.
+    if (proxima !== get()[chave]) set({ [chave]: proxima })
+  },
+
+  mover(eixo, nome, delta) {
+    const chave = CHAVE_ORDEM[eixo]
+    set({ [chave]: moverItem(get()[chave], nome, delta) })
+  },
+
+  moverParaIndice(eixo, nome, destino) {
+    const chave = CHAVE_ORDEM[eixo]
+    set({ [chave]: moverItemParaIndice(get()[chave], nome, destino) })
+  },
+
+  marcarCelulaConferencia(estanteId, codigo, indicePosicao, marcado, capacidade) {
+    const conferencias = get().conferencias
+    const atual = conferencias[estanteId] ?? iniciarConferencia(new Date().toISOString())
+
+    set({
+      conferencias: {
+        ...conferencias,
+        [estanteId]: marcarCelula(atual, codigo, indicePosicao, marcado, capacidade),
+      },
+    })
+  },
+
+  novaConferencia(estanteId) {
+    set({
+      conferencias: {
+        ...get().conferencias,
+        [estanteId]: iniciarConferencia(new Date().toISOString()),
+      },
+    })
+  },
+
+  podarConferenciaDaEstante(estanteId, codigosNoPlano) {
+    // Sem nenhum codigo no plano, nao ha o que concluir: pode ser CSV ausente
+    // ou raiz de categoria mal preenchida, e podar ali apagaria a conferencia
+    // inteira do usuario por causa de um campo digitado errado.
+    if (codigosNoPlano.size === 0) return
+
+    const conferencias = get().conferencias
+    const atual = conferencias[estanteId]
+    if (!atual) return
+
+    const podada = podarConferencia(atual, codigosNoPlano)
+    if (podada === atual) return
+
+    set({ conferencias: { ...conferencias, [estanteId]: podada } })
+  },
+
+  moverCor(chave, delta, grupo) {
+    aplicarNaOrdemDeCor(get, set, grupo, (ordem) => moverItem(ordem, chave, delta))
+  },
+
+  moverCorParaIndice(chave, destino, grupo) {
+    aplicarNaOrdemDeCor(get, set, grupo, (ordem) => moverItemParaIndice(ordem, chave, destino))
+  },
+
+  criarOrdemCoresDoGrupo(grupo) {
+    if (get().ordemCoresPorGrupo[grupo]) return
+    set({ ordemCoresPorGrupo: { ...get().ordemCoresPorGrupo, [grupo]: [...get().ordemCores] } })
+  },
+
+  limparOrdemCoresDoGrupo(grupo) {
+    const { [grupo]: _removida, ...resto } = get().ordemCoresPorGrupo
+    set({ ordemCoresPorGrupo: resto })
+  },
+
+  setPalavrasIgnoradas(palavras) {
+    const limpas: string[] = []
+    const vistas = new Set<string>()
+    for (const bruta of palavras) {
+      const palavra = bruta.trim().slice(0, 40)
+      const chave = palavra.toUpperCase()
+      if (palavra === '' || vistas.has(chave)) continue
+      vistas.add(chave)
+      limpas.push(palavra)
+    }
+    set({ palavrasIgnoradas: limpas })
+  },
+
+  alternarMarcaPermitida(estanteId, marca) {
+    const estante = get().estantes.find((e) => e.id === estanteId)
+    if (!estante) return
+
+    const dentro = estante.marcasPermitidas.includes(marca)
+    const marcasPermitidas = dentro
+      ? estante.marcasPermitidas.filter((m) => m !== marca)
+      : [...estante.marcasPermitidas, marca]
+
+    get().atualizarEstante(estanteId, { marcasPermitidas })
+  },
+
+  alternarAndarBloqueado(estanteId, andar) {
+    const estante = get().estantes.find((e) => e.id === estanteId)
+    if (!estante) return
+
+    const bloqueado = estante.andaresBloqueados.includes(andar)
+    const andaresBloqueados = bloqueado
+      ? estante.andaresBloqueados.filter((a) => a !== andar)
+      : [...estante.andaresBloqueados, andar].sort((a, b) => a - b)
+
+    get().atualizarEstante(estanteId, { andaresBloqueados })
+  },
+
+  setLarguraCelula(codigo, largura) {
+    if (!codigo) return
+    const n = Math.min(
+      LIMITES_ESTANTE.largura.max,
+      Math.max(LIMITES_ESTANTE.largura.min, Math.trunc(largura) || 1),
+    )
+
+    const proximo = { ...get().largurasCelula }
+    // 1 e o padrao: guardar seria ruido no storage.
+    if (n === 1) delete proximo[codigo]
+    else proximo[codigo] = n
+
+    set({ largurasCelula: proximo })
+  },
+
+  definirRegraAndar(estanteId, regra) {
+    const estante = get().estantes.find((e) => e.id === estanteId)
+    if (!estante) return
+
+    const outras = estante.regrasAndar.filter((r) => r.andar !== regra.andar)
+    // Regra que nao restringe nada e o mesmo que nao ter regra.
+    const regrasAndar = regraVazia(regra)
+      ? outras
+      : [...outras, regra].sort((a, b) => a.andar - b.andar)
+
+    get().atualizarEstante(estanteId, { regrasAndar })
+  },
+
+  limparRegraAndar(estanteId, andar) {
+    const estante = get().estantes.find((e) => e.id === estanteId)
+    if (!estante) return
+    get().atualizarEstante(estanteId, {
+      regrasAndar: estante.regrasAndar.filter((r) => r.andar !== andar),
+    })
+  },
 }))
+
+/**
+ * Aplica uma mudanca na ordem de cor certa: a do grupo, se houver excecao, ou a
+ * geral. Evita repetir o mesmo `if` em cada action de mover cor.
+ */
+function aplicarNaOrdemDeCor(
+  get: () => EstadoApp,
+  set: (parcial: Partial<EstadoApp>) => void,
+  grupo: string | undefined,
+  transformar: (ordem: string[]) => string[],
+): void {
+  if (grupo && get().ordemCoresPorGrupo[grupo]) {
+    const atual = get().ordemCoresPorGrupo[grupo]!
+    set({ ordemCoresPorGrupo: { ...get().ordemCoresPorGrupo, [grupo]: transformar(atual) } })
+    return
+  }
+  set({ ordemCores: transformar(get().ordemCores) })
+}
 
 /**
  * Colunas a exibir: as preferidas que existem, senao as 5 primeiras.

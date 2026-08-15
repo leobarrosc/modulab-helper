@@ -29,6 +29,17 @@ async function iniciar() {
       corte: s.corte,
       modelo: serializarModelo(s.modelo),
       salvos: s.salvos.map((item) => serializarModelo({ ...item.modelo, nome: item.nome })),
+      abaAtiva: s.abaAtiva,
+      estantes: s.estantes,
+      ...(s.estanteAtivaId ? { estanteAtivaId: s.estanteAtivaId } : {}),
+      correcoesClassificacao: s.correcoesClassificacao,
+      ordemTipos: s.ordemTipos,
+      ordemMarcas: s.ordemMarcas,
+      ordemCores: s.ordemCores,
+      ordemCoresPorGrupo: s.ordemCoresPorGrupo,
+      palavrasIgnoradas: s.palavrasIgnoradas,
+      largurasCelula: s.largurasCelula,
+      conferencias: s.conferencias,
     })
   })
 

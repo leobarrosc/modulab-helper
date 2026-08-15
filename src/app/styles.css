@@ -230,6 +230,7 @@ button.secundario {
 
 input[type='search'],
 input[type='number'],
+input[type='text'],
 select {
   font: inherit;
   padding: 0.4rem 0.55rem;
@@ -1326,4 +1327,747 @@ button.perigo {
   border-top: 1px solid var(--borda);
   color: var(--tinta-fraca);
   font-size: 0.85rem;
+}
+
+/* ---------- abas ---------- */
+
+.abas {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 1.4rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 9px 9px 0 0;
+  background: transparent;
+  color: var(--tinta-fraca);
+  font-size: 0.92rem;
+  /* A aba ativa cresce 1px para baixo e cobre a borda da nav. */
+  margin-bottom: -1px;
+}
+
+.aba:hover:not(.ativa) {
+  color: var(--tinta);
+  opacity: 1;
+}
+
+.aba.ativa {
+  border-color: var(--borda);
+  background: var(--fundo);
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.abas + .fluxo {
+  margin-top: 1.1rem;
+}
+
+/* ---------- estante: seletor rapido ---------- */
+
+.seletor-estante {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: 11px;
+  background: var(--papel);
+}
+
+.estante-pilulas {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.pilula {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tinta-fraca);
+  font-size: 0.85rem;
+}
+
+.pilula.ativa {
+  background: var(--realce);
+  border-color: var(--realce);
+  color: var(--fundo);
+  font-weight: 600;
+}
+
+.seletor-estante select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- estante: cadastro ---------- */
+
+.estante-listas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.grupo-caixas {
+  margin: 0;
+  padding: 0.6rem 0.8rem 0.8rem;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+}
+
+.grupo-caixas legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.grupo-caixas .dica {
+  margin: 0 0 0.5rem;
+  text-align: left;
+}
+
+.caixas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+
+/* ---------- estante: regras por andar ---------- */
+
+.titulo-secao {
+  margin: 1.4rem 0 0;
+  font-size: 0.95rem;
+}
+
+.regras-andar {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.regra-andar {
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  padding: 0.45rem 0.7rem;
+}
+
+.regra-andar summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.regra-andar summary .dica {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.regra-andar summary button {
+  padding: 0.15rem 0.35rem;
+  line-height: 1;
+}
+
+.regra-eixo {
+  margin-top: 0.6rem;
+}
+
+.regra-eixo .campo-rotulo {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.regra-eixo em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+/* ---------- estante: palavras ignoradas ---------- */
+
+.ignoradas {
+  margin: 0.7rem 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  font-size: 0.85rem;
+}
+
+.ignoradas summary {
+  cursor: pointer;
+  color: var(--tinta-fraca);
+}
+
+.ignoradas .dica {
+  text-align: left;
+}
+
+.ignoradas input[type='text'] {
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+.ignoradas code {
+  padding: 0.05rem 0.25rem;
+  border-radius: 4px;
+  background: var(--papel);
+  font-size: 0.95em;
+}
+
+/* ---------- estante: cadastro (campos) ---------- */
+
+.estante-form .campo > span,
+.estante-campos .campo > span {
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+}
+
+.estante-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+
+.estante-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* ---------- estante: organizacao ---------- */
+
+.organizacao {
+  display: grid;
+  grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+  gap: 1.2rem;
+  margin-top: 0.8rem;
+  align-items: start;
+}
+
+.ordens {
+  display: grid;
+  gap: 1.4rem;
+  min-width: 0;
+}
+
+.organizacao h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.organizacao .dica {
+  margin-top: 0.35rem;
+  text-align: left;
+}
+
+@media (max-width: 60rem) {
+  .organizacao {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lista-arrastavel {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.arrastavel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--fundo);
+  font-size: 0.88rem;
+  /* Sem isto, arrastar seleciona o texto dos itens em vez de mover a linha. */
+  user-select: none;
+}
+
+.arrastavel.arrastando {
+  opacity: 0.45;
+}
+
+.arrastavel.solta-alvo {
+  border-color: var(--realce);
+  box-shadow: inset 0 0 0 1px var(--realce);
+}
+
+.arrastavel .pega {
+  padding: 0.15rem 0.2rem;
+  border: none;
+  background: transparent;
+  color: var(--tinta-fraca);
+  cursor: grab;
+  touch-action: none;
+}
+
+.arrastavel.arrastando .pega {
+  cursor: grabbing;
+}
+
+.ordem-numero {
+  min-width: 1.2rem;
+  color: var(--tinta-fraca);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ordem-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ordem-botoes {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.ordem-botoes button {
+  padding: 0.2rem 0.35rem;
+  line-height: 1;
+}
+
+.seta-cima {
+  transform: rotate(-90deg);
+}
+
+.seta-baixo {
+  transform: rotate(90deg);
+}
+
+/* ---------- estante: correcao de classificacao ---------- */
+
+.correcao-filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin: 0.7rem 0;
+}
+
+.correcao-rolagem {
+  max-height: 26rem;
+  overflow: auto;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+}
+
+.correcao-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.correcao-tabela th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.45rem 0.5rem;
+  background: var(--papel);
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+}
+
+.correcao-tabela td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--borda);
+  vertical-align: middle;
+}
+
+.correcao-tabela input[type='text'] {
+  width: 100%;
+  min-width: 5rem;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.83rem;
+}
+
+.correcao-tabela tr.corrigido td {
+  background: var(--alerta-fundo);
+}
+
+.correcao-descricao {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tinta-fraca);
+}
+
+.correcao-cor {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- estante: o mapa ---------- */
+
+.mapa-estante {
+  margin-top: 0.8rem;
+}
+
+.mapa-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.progresso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--tinta-fraca);
+}
+
+.progresso-trilho {
+  width: 11rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--papel);
+  border: 1px solid var(--borda);
+  overflow: hidden;
+}
+
+.progresso-preenchido {
+  height: 100%;
+  background: var(--realce);
+}
+
+.mapa-acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.mapa-acoes .dica {
+  margin: 0;
+}
+
+.mapa-rolagem {
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+}
+
+.mapa-andar + .mapa-andar {
+  margin-top: 0.9rem;
+}
+
+.andar-rotulo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* A marca do andar: e ela que o olho procura ao chegar na estante. */
+.andar-marca {
+  color: var(--tinta);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.mapa-linha {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.celula-estante {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.4rem 0.45rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--fundo);
+  font-size: 0.78rem;
+  min-height: 6.2rem;
+  align-content: start;
+}
+
+.celula-estante.completa {
+  border-color: var(--realce);
+  background: var(--papel);
+}
+
+.celula-vazia {
+  border-style: dashed;
+  opacity: 0.5;
+}
+
+/* Andar fora de uso: hachurado, para nao se confundir com celula so vazia. */
+.celula-bloqueada {
+  border-style: dashed;
+  opacity: 0.35;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    var(--borda) 5px,
+    var(--borda) 6px
+  );
+  min-height: 3rem;
+}
+
+.andar-fora .mapa-linha {
+  --altura-celula: 3rem;
+}
+
+.andar-fora-nota {
+  color: var(--tinta-fraca);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.lista-cores {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.celula-endereco {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  color: var(--tinta-fraca);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Controle de largura: discreto ate o ponteiro chegar na celula. */
+.largura-controle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.celula-estante:hover .largura-controle,
+.largura-controle:focus-within {
+  opacity: 1;
+}
+
+.largura-botao {
+  padding: 0 0.25rem;
+  border: 1px solid var(--borda-forte);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tinta);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.largura-valor {
+  min-width: 0.8rem;
+  text-align: center;
+}
+
+.celula-checks {
+  flex-wrap: wrap;
+}
+
+.celula-cabeca {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.bolinha-cor {
+  flex: none;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  border: 1px solid var(--borda-forte);
+}
+
+/* Sem cor reconhecida: xadrez discreto, para nao fingir uma cor que nao existe. */
+.bolinha-cor.sem-cor {
+  background:
+    linear-gradient(45deg, var(--borda) 25%, transparent 25%, transparent 75%, var(--borda) 75%)
+      0 0 / 0.4rem 0.4rem,
+    linear-gradient(45deg, var(--borda) 25%, transparent 25%, transparent 75%, var(--borda) 75%)
+      0.2rem 0.2rem / 0.4rem 0.4rem;
+}
+
+/* Duas linhas: "MATE DUAL COLOR PRETO E VERMELHO" nao cabe em uma so. */
+.celula-cor {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.celula-tipo {
+  color: var(--tinta-fraca);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.celula-codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--tinta-fraca);
+}
+
+.celula-checks {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.celula-checks .checa {
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--tinta-fraca);
+}
+
+.celula-esgotado {
+  color: var(--vermelho);
+  font-size: 0.68rem;
+}
+
+.nao-alocados {
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--alerta);
+  background: var(--alerta-fundo);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.nao-alocados .dica {
+  margin: 0.2rem 0 0.5rem;
+  text-align: left;
+  color: var(--alerta);
+}
+
+.nao-alocados ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+/* ---------- estante: reposicao ---------- */
+
+.reposicao-cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.reposicao-cabeca p {
+  margin: 0;
+}
+
+.reposicao-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
+
+.reposicao-tabela th,
+.reposicao-tabela td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+}
+
+.reposicao-tabela th {
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  font-weight: 600;
+}
+
+.reposicao-tabela .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.reposicao-tabela tr.sem-estoque td {
+  color: var(--vermelho);
+}
+
+.reposicao-titulo-impressao {
+  display: none;
+}
+
+/* ---------- impressao da lista de reposicao ---------- */
+
+@media print {
+  /* A lista e para levar ao deposito: some tudo o que nao ajuda a achar rolo. */
+  .cabecalho,
+  .abas,
+  .rodape,
+  .passo:not(:has(.reposicao)),
+  .passo-cabecalho,
+  .reposicao-cabeca,
+  .aviso {
+    display: none !important;
+  }
+
+  .shell {
+    max-width: none;
+    padding: 0;
+  }
+
+  .passo {
+    border: none;
+  }
+
+  .reposicao-titulo-impressao {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .reposicao-tabela {
+    font-size: 10pt;
+  }
+
+  .reposicao-tabela tr {
+    break-inside: avoid;
+  }
 }

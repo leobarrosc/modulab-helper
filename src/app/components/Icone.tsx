@@ -27,6 +27,9 @@ export type NomeIcone =
   | 'lixeira'
   | 'cadeado'
   | 'cadeadoAberto'
+  | 'estante'
+  | 'ajustes'
+  | 'arrastar'
 
 const CAMINHOS: Record<NomeIcone, ReactElement> = {
   importar: (
@@ -123,6 +126,27 @@ const CAMINHOS: Record<NomeIcone, ReactElement> = {
     <>
       <rect x="5" y="11" width="14" height="9" rx="1.5" />
       <path d="M8 11V8a4 4 0 0 1 7.5-2" />
+    </>
+  ),
+  // Prateleira vista de frente: divisorias horizontais. Nao da para reusar
+  // `folha`, que tem divisoria vertical e ja significa papel.
+  estante: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M3 9.3h18M3 14.7h18" />
+    </>
+  ),
+  ajustes: (
+    <>
+      <path d="M5 6h14M5 12h14M5 18h14" />
+      <circle cx="9" cy="6" r="2" />
+      <circle cx="15" cy="12" r="2" />
+      <circle cx="9" cy="18" r="2" />
+    </>
+  ),
+  arrastar: (
+    <>
+      <path d="M9 7h.01M15 7h.01M9 12h.01M15 12h.01M9 17h.01M15 17h.01" />
     </>
   ),
 }

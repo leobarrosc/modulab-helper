@@ -3,6 +3,18 @@ import type { Modelo } from '@/core/etiqueta/tipos'
 import type { ConfigCorte, Grade, Pagina } from '@/core/layout'
 import type { FonteCodigo } from '@/core/produtos'
 import { lerModelo } from '@/core/etiqueta/serializar'
+import {
+  comItensNovos,
+  lerConferencias,
+  lerCorrecoes,
+  lerLarguras,
+  lerOrdemNomes,
+  lerTemplates,
+  ordemCoresPadrao,
+  type CorrecaoClassificacao,
+  type EstadoConferencia,
+  type TemplateEstante,
+} from '@/core/estante'
 
 /**
  * Persistencia das escolhas do usuario.
@@ -31,6 +43,28 @@ export interface EstadoPersistido {
   modelo?: unknown
   /** Modelos salvos pelo usuario, com nome. */
   salvos?: unknown[]
+
+  /** Aba aberta por ultimo: volta como estava, igual ao papel da etiqueta. */
+  abaAtiva?: string
+  /** Estantes cadastradas. Validadas na leitura. */
+  estantes?: unknown
+  estanteAtivaId?: string
+  /** Correcoes manuais de Marca/Tipo/Cor, por Código do produto. */
+  correcoesClassificacao?: unknown
+  /** Ordem dos tipos de filamento na prateleira, escolhida pelo usuario. */
+  ordemTipos?: unknown
+  /** Ordem das marcas: define qual marca fica em qual andar. */
+  ordemMarcas?: unknown
+  /** Ordem das cores da estante inteira. */
+  ordemCores?: unknown
+  /** Excecoes de ordem de cor, por marca+tipo. */
+  ordemCoresPorGrupo?: unknown
+  /** Palavras que o usuario mandou ignorar ao extrair a cor. */
+  palavrasIgnoradas?: unknown
+  /** Quantas colunas cada produto ocupa, por Código. */
+  largurasCelula?: unknown
+  /** Conferencia em andamento, por estante. */
+  conferencias?: unknown
 }
 
 interface BackendArmazenamento {
@@ -120,4 +154,63 @@ export function salvosDoEstado(estado: EstadoPersistido): ModeloSalvo[] {
     }
   }
   return lista
+}
+
+/**
+ * As estantes gravadas.
+ *
+ * `null` quando a chave nunca existiu, para o store distinguir a primeira
+ * execucao (que ganha a estante de fabrica) de "o usuario apagou todas".
+ */
+export function estantesDoEstado(estado: EstadoPersistido): TemplateEstante[] | null {
+  return lerTemplates(estado.estantes)?.templates ?? null
+}
+
+export function correcoesDoEstado(
+  estado: EstadoPersistido,
+): Record<string, CorrecaoClassificacao> {
+  return lerCorrecoes(estado.correcoesClassificacao)
+}
+
+export function ordemTiposDoEstado(estado: EstadoPersistido): string[] {
+  return lerOrdemNomes(estado.ordemTipos)
+}
+
+export function ordemMarcasDoEstado(estado: EstadoPersistido): string[] {
+  return lerOrdemNomes(estado.ordemMarcas)
+}
+
+/**
+ * A ordem de cores gravada, completada com as cores que o app passou a
+ * conhecer. Uma versao nova com uma cor nova no dicionario nao pode deixar essa
+ * cor de fora da lista arrastavel.
+ */
+export function ordemCoresDoEstado(estado: EstadoPersistido): string[] {
+  const gravada = lerOrdemNomes(estado.ordemCores)
+  return gravada.length === 0 ? ordemCoresPadrao() : comItensNovos(gravada, ordemCoresPadrao())
+}
+
+export function ordemCoresPorGrupoDoEstado(estado: EstadoPersistido): Record<string, string[]> {
+  if (typeof estado.ordemCoresPorGrupo !== 'object' || estado.ordemCoresPorGrupo === null) return {}
+
+  const grupos: Record<string, string[]> = {}
+  for (const [grupo, valor] of Object.entries(estado.ordemCoresPorGrupo)) {
+    const ordem = lerOrdemNomes(valor)
+    if (grupo !== '' && ordem.length > 0) grupos[grupo] = comItensNovos(ordem, ordemCoresPadrao())
+  }
+  return grupos
+}
+
+export function palavrasIgnoradasDoEstado(estado: EstadoPersistido): string[] {
+  return lerOrdemNomes(estado.palavrasIgnoradas)
+}
+
+export function largurasDoEstado(estado: EstadoPersistido): Record<string, number> {
+  return lerLarguras(estado.largurasCelula)
+}
+
+export function conferenciasDoEstado(
+  estado: EstadoPersistido,
+): Record<string, EstadoConferencia> {
+  return lerConferencias(estado.conferencias)
 }
