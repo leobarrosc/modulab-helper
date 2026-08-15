@@ -11,3 +11,9 @@ Thumbs.db
 # Documentos internos de planejamento/instrucoes, nao fazem parte do repo publico
 PLANO.md
 CLAUDE.md
+
+# Exports reais do Bling nao entram no repo: o CSV traz nome de fornecedor,
+# preco de custo e preco de compra. O unico versionado e o fixture dos testes,
+# que tem essas colunas zeradas de proposito.
+produtos_*.csv
+!produtos_2026-07-20-10-29-43.csv

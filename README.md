@@ -113,8 +113,10 @@ faltam e quantos há no depósito. Dá para imprimir e levar junto.
 
 ## Estado atual
 
-**Fase 5 de 7 — PDF e impressão.** O ciclo está fechado: dá para importar o
-CSV, montar a etiqueta e sair com o PDF pronto.
+**As duas abas estão completas e em uso.** O ciclo das etiquetas fecha do CSV
+ao PDF, e o da estante vai do CSV ao mapa e à lista de reposição impressa.
+
+Etiquetas, as sete fases do plano original:
 
 - ✅ Fase 0 — scaffold: clicar no ícone abre a aba do app.
 - ✅ Fase 1 — leitura do CSV do Bling e tabela de seleção de produtos.
@@ -124,6 +126,16 @@ CSV, montar a etiqueta e sair com o PDF pronto.
 - ✅ Fase 5 — PDF vetorial nas medidas exatas e impressão direta.
 - ✅ Fase 6 — escolhas e modelos persistidos; exportar/importar `.json`.
 - ✅ Fase 7 — fluxo em passos, borda por etiqueta e guia de corte.
+
+Estante, a segunda missão, numa aba própria:
+
+- ✅ Classificação Marca › Tipo › Cor deduzida do CSV, com correção manual.
+- ✅ Ordem das marcas, dos tipos e das cores, arrastáveis e persistidas.
+- ✅ Várias estantes, marcas por estante, andares fora de uso e reservados.
+- ✅ Largura de célula por produto, conferência de dois rolos e lista de
+  reposição na ordem de leitura da prateleira.
+
+A suíte cobre a lógica pura: **433 testes em 18 arquivos**, todos verdes.
 
 ### Guia de corte
 
@@ -195,8 +207,7 @@ desmarcados.
 **O tamanho da etiqueta é sempre calculado**, nunca digitado: escolha o papel e
 quantas colunas × linhas cabem nele, e a etiqueta se redimensiona. Uma A4 em
 3 × 8 com margem 5 mm e espaço 2 mm dá etiquetas de 65,3 × 34,1 mm, 24 por
-folha. Ainda **não há persistência** — a opção de gravar um papel como padrão
-chega na Fase 6.
+folha.
 
 ## Instalação
 
@@ -216,7 +227,8 @@ de abrir duplicatas.
 
 ### Opção 2 — build a partir do código-fonte
 
-Para quem vai mexer no código. Requer Node 20+ (testado com Node 24 / npm 11).
+Para quem vai mexer no código. Requer Node 20+ (desenvolvimento e CI rodam em
+Node 24 / npm 11).
 
 ```bash
 npm install
@@ -249,21 +261,58 @@ pasta no navegador (ver Opção 1 acima) e as alterações recarregam sozinhas.
 
 ```
 src/
-├── background/   service worker — só abre a aba
-├── core/         lógica pura, sem DOM, testável
-│   ├── csv/      detecção de encoding/delimitador, parser, limpeza
-│   └── estante/  classificação, ordem das cores, alocação, conferência
-├── app/          a aba: React + editor de etiquetas + mapa da estante
-│   ├── store.ts  estado (zustand)
-│   └── components/
-└── assets/icons/ ícones gerados por script
+├── background/     service worker — só abre a aba
+├── core/           lógica pura, sem DOM, testável
+│   ├── csv/        detecção de encoding/delimitador, parser, limpeza
+│   ├── etiqueta/   modelo da etiqueta, resolução de campos, métricas
+│   ├── layout/     página, grade colunas × linhas, guia de corte
+│   ├── render/     DrawOp[] → SVG e PDF (um cálculo, dois backends)
+│   ├── simbologia/ as 19 simbologias sobre bwip-js, em vetor
+│   └── estante/    classificação, ordem das cores, alocação, conferência
+├── app/            a aba: React + editor de etiquetas + mapa da estante
+│   ├── store.ts    estado (zustand)
+│   └── components/ AbaEtiquetas / AbaEstante e o resto da UI
+└── assets/icons/   ícones gerados por script
 ```
 
-Regra que sustenta a testabilidade: **nada em `core/` importa React ou toca no
-DOM**. É o que permite testar a geração do PDF sem abrir um navegador.
+Duas regras sustentam a testabilidade e o resto da arquitetura:
+
+- **Nada em `core/` importa React ou toca no DOM.** É o que permite testar a
+  geração do PDF sem abrir um navegador.
+- **Prévia, impressão e PDF partilham um cálculo só.** Ele produz uma lista de
+  `DrawOp` em milímetros, e os dois backends apenas desenham — é o que garante
+  que o PDF saia igual ao que estava na tela.
+
+## Publicar uma versão
+
+O zip da Release é gerado pelo GitHub Actions
+([.github/workflows/release.yml](.github/workflows/release.yml)): ele roda os
+testes, faz o build limpo e anexa `modulab-helper-dist.zip` à Release.
+
+O gatilho é uma tag `v*`. Para publicar:
+
+```bash
+npm version patch      # ou minor / major — atualiza package.json
+git push --follow-tags
+```
+
+A versão do `package.json` é a que vai para o `manifest.json` da extensão, então
+a tag e a versão que o navegador mostra andam sempre juntas.
 
 ## Privacidade
 
 A extensão não pede permissões de host e não faz nenhuma requisição de rede.
 O CSV é lido por um `<input type="file">` local e nenhum dado de produto sai
 da máquina.
+
+A extração de cor e a classificação são offline e determinísticas — foi uma
+decisão, não uma limitação. Mandar descrição de produto para uma IA custaria
+permissão de host no manifest e um resultado que muda sozinho entre execuções
+sem o CSV ter mudado.
+
+O mesmo vale para o repositório: o único CSV versionado é
+`produtos_2026-07-20-10-29-43.csv`, um export real usado como fixture dos
+testes, **com as colunas comerciais zeradas** (`Preço de custo`, `Fornecedor`,
+`Cód. no fornecedor`, `Descrição do Produto no Fornecedor` e `Preço de Compra`).
+Qualquer outro `produtos_*.csv` na raiz é ignorado pelo git, porque um export
+cru do Bling traz fornecedor e margem.
