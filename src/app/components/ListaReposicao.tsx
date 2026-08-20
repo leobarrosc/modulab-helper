@@ -1,6 +1,7 @@
 import { hexDaCor } from '@/core/estante'
 import type { ItemReposicao, TemplateEstante } from '@/core/estante'
 import Icone from './Icone'
+import { imprimirSecao } from '../imprimir'
 
 /**
  * O payoff: o que pegar no deposito.
@@ -37,7 +38,7 @@ export default function ListaReposicao({
         <p>
           <strong>{totalRolos} rolo(s)</strong> para repor em {itens.length} posição(ões).
         </p>
-        <button type="button" className="secundario" onClick={() => window.print()}>
+        <button type="button" className="secundario" onClick={() => imprimirSecao('reposicao')}>
           <Icone nome="imprimir" tamanho={14} /> Imprimir a lista
         </button>
       </div>

@@ -168,6 +168,11 @@ A conferência fica guardada e sobrevive a fechar a aba. *Nova conferência* zer
 tudo e carimba a data. Produto **sem estoque no depósito sai da estante** e os
 seguintes sobem uma posição.
 
+O mapa também **se imprime**, em *Imprimir o mapa*: uma folha em paisagem com
+os andares, a bolinha de cor, o endereço, o código e as caixinhas em branco para
+marcar a caneta enquanto se caminha na frente da prateleira. Uma estante 6 × 12
+cabe em uma página só.
+
 No fim, a lista de reposição sai na ordem de leitura da estante — que é a ordem
 em que se caminha na frente dela — com posição, código, tipo, cor, quantos
 faltam e quantos há no depósito. Dá para imprimir e levar junto.

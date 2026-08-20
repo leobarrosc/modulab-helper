@@ -14,6 +14,7 @@ import type {
   TemplateEstante,
 } from '@/core/estante'
 import Icone from './Icone'
+import { imprimirSecao } from '../imprimir'
 import { useApp } from '../store'
 
 /**
@@ -241,11 +242,25 @@ export default function MapaEstante({
           <button
             type="button"
             className="secundario"
+            title="Levar o mapa em papel para conferir na frente da prateleira"
+            onClick={() => imprimirSecao('mapa')}
+          >
+            <Icone nome="imprimir" tamanho={14} /> Imprimir o mapa
+          </button>
+          <button
+            type="button"
+            className="secundario"
             onClick={() => novaConferencia(estante.id)}
           >
             <Icone nome="refazer" tamanho={14} /> Nova conferência
           </button>
         </div>
+      </div>
+
+      {/* So na folha: na tela essa informacao ja esta no cabecalho do passo. */}
+      <div className="mapa-titulo-impressao" aria-hidden="true">
+        {estante.nome} — {estante.andares} × {estante.colunas}
+        {iniciada ? ` · conferência de ${iniciada}` : ''}
       </div>
 
       <div className="mapa-rolagem">

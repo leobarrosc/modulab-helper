@@ -77,3 +77,50 @@ function documentoImprimivel(
   .folha { display: block; width: 100%; height: 100%; }
 </style></head><body>${folhas}</body></html>`
 }
+
+/** O que a folha deve conter: a pagina inteira nao cabe nem interessa. */
+export type SecaoImprimivel = 'mapa' | 'reposicao'
+
+/**
+ * Marca no `<body>` o que imprimir e chama o dialogo.
+ *
+ * O CSS de impressao esconde tudo que nao for a secao escolhida. Sem a marca
+ * ele nao teria como saber: as duas secoes vivem na mesma pagina, e antes so a
+ * lista de reposicao era imprimivel porque estava escrita no seletor.
+ *
+ * O mapa vai em paisagem -- 12 colunas em retrato dao ~15mm por celula, onde
+ * nome de cor nenhum cabe. A regra `@page` nao pode ser condicionada por
+ * seletor, entao ela entra e sai junto com a impressao.
+ */
+export function imprimirSecao(secao: SecaoImprimivel): void {
+  const { body } = document
+  const anterior = body.dataset['imprimir']
+
+  body.dataset['imprimir'] = secao
+
+  let paisagem: HTMLStyleElement | null = null
+  if (secao === 'mapa') {
+    paisagem = document.createElement('style')
+    paisagem.textContent = '@page { size: landscape; margin: 8mm; }'
+    document.head.appendChild(paisagem)
+  }
+
+  let limpo = false
+  const restaurar = () => {
+    if (limpo) return
+    limpo = true
+
+    if (anterior === undefined) delete body.dataset['imprimir']
+    else body.dataset['imprimir'] = anterior
+
+    paisagem?.remove()
+    window.removeEventListener('afterprint', restaurar)
+  }
+
+  window.addEventListener('afterprint', restaurar)
+  window.print()
+  // Chromium volta de `print()` com o dialogo ja fechado e dispara
+  // `afterprint`; o timeout so cobre quem nao disparar, para a pagina nao
+  // ficar presa no estado de impressao.
+  setTimeout(restaurar, 1000)
+}

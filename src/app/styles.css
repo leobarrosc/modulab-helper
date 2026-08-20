@@ -2098,21 +2098,21 @@ button.perigo {
   font-weight: 600;
 }
 
-.reposicao-titulo-impressao {
+.reposicao-titulo-impressao,
+.mapa-titulo-impressao {
   display: none;
 }
 
 /* ---------- impressao da lista de reposicao ---------- */
 
 @media print {
-  /* A lista e para levar ao deposito: some tudo o que nao ajuda a achar rolo. */
+  /* Impresso e sempre UMA secao. `data-imprimir` no body diz qual -- ver
+     `imprimirSecao`. Sem a marca vale a lista de reposicao, que era a unica
+     imprimivel antes de o mapa ganhar botao. */
   .cabecalho,
   .abas,
   .rodape,
-  .passo:not(:has(.reposicao)),
-  .passo-cabecalho,
-  .reposicao-cabeca,
-  .aviso {
+  .passo-cabecalho {
     display: none !important;
   }
 
@@ -2125,11 +2125,20 @@ button.perigo {
     border: none;
   }
 
-  .reposicao-titulo-impressao {
+  .reposicao-titulo-impressao,
+  .mapa-titulo-impressao {
     display: block;
     margin-bottom: 0.6rem;
     font-size: 1.1rem;
     font-weight: 600;
+  }
+
+  /* ---------- alvo: lista de reposicao ---------- */
+
+  body:not([data-imprimir='mapa']) .passo:not(:has(.reposicao)),
+  body:not([data-imprimir='mapa']) .reposicao-cabeca,
+  body:not([data-imprimir='mapa']) .aviso {
+    display: none !important;
   }
 
   .reposicao-tabela {
@@ -2138,5 +2147,101 @@ button.perigo {
 
   .reposicao-tabela tr {
     break-inside: avoid;
+  }
+
+  /* ---------- alvo: mapa da estante ---------- */
+
+  /* Some o que so serve na tela: barra de acoes, controles de largura e os
+     blocos de aviso, que sao para agir no app e nao na frente da prateleira. */
+  body[data-imprimir='mapa'] .passo:not(:has(.mapa-estante)),
+  body[data-imprimir='mapa'] .mapa-barra,
+  body[data-imprimir='mapa'] .largura-controle,
+  body[data-imprimir='mapa'] .mapa-avisos,
+  body[data-imprimir='mapa'] .nao-alocados {
+    display: none !important;
+  }
+
+  /* A rolagem horizontal nao existe no papel: a grade tem de caber na folha. */
+  body[data-imprimir='mapa'] .mapa-rolagem {
+    overflow: visible;
+  }
+
+  body[data-imprimir='mapa'] .mapa-linha {
+    gap: 0.15rem;
+  }
+
+  body[data-imprimir='mapa'] .mapa-andar {
+    break-inside: avoid;
+  }
+
+  body[data-imprimir='mapa'] .celula-estante {
+    min-height: 0;
+    padding: 0.2rem 0.25rem;
+    font-size: 7pt;
+  }
+
+  /*
+   * `hyphens` em vez do corte seco de `overflow-wrap: anywhere`: na coluna
+   * estreita da folha "TRANSPARENTE" virava "TRANSPAREN TE", que se le como
+   * duas palavras. Com hifen o leitor entende que a palavra continua. O
+   * `lang="pt-BR"` do documento e o que faz o navegador saber onde separar.
+   */
+  body[data-imprimir='mapa'] .celula-cor {
+    font-size: 6.5pt;
+    overflow-wrap: normal;
+    hyphens: auto;
+  }
+
+  /* A bolinha divide a linha com o nome, e na coluna estreita da folha eram os
+     poucos pixels que faziam "TRANSPARENTE" quebrar no meio da palavra. */
+  body[data-imprimir='mapa'] .bolinha-cor {
+    width: 0.55rem;
+    height: 0.55rem;
+  }
+
+  body[data-imprimir='mapa'] .celula-cabeca {
+    gap: 0.2rem;
+  }
+
+  /* A altura e o recurso escasso na folha -- uma estante de 6 andares so cabe
+     em uma pagina se a celula nao esticar. Dai F e T lado a lado (na tela eles
+     quebram em duas linhas quando a coluna e estreita) e as margens menores. */
+  body[data-imprimir='mapa'] .celula-checks {
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    margin-top: 0.1rem;
+  }
+
+  body[data-imprimir='mapa'] .celula-checks .checa {
+    gap: 0.15rem;
+    font-size: 6pt;
+  }
+
+  body[data-imprimir='mapa'] .celula-checks input[type='checkbox'] {
+    width: 0.62rem;
+    height: 0.62rem;
+  }
+
+  body[data-imprimir='mapa'] .andar-rotulo {
+    margin-bottom: 0.1rem;
+    font-size: 6.5pt;
+  }
+
+  body[data-imprimir='mapa'] .mapa-andar + .mapa-andar {
+    margin-top: 0.3rem;
+  }
+
+  body[data-imprimir='mapa'] .celula-endereco,
+  body[data-imprimir='mapa'] .celula-tipo,
+  body[data-imprimir='mapa'] .celula-codigo {
+    font-size: 6pt;
+  }
+
+  /* A bolinha e a caixinha sao o conteudo da folha, nao decoracao: sem isto o
+     navegador descarta a cor de fundo ao imprimir. */
+  body[data-imprimir='mapa'] .bolinha-cor,
+  body[data-imprimir='mapa'] .checa input[type='checkbox'] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
