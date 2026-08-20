@@ -114,6 +114,11 @@ branco e matte"*. A reserva vale nos dois sentidos — o andar só recebe o que
 você marcou, e o que você marcou não aparece em nenhum outro andar. Marcar só as
 cores limita a cor e aceita qualquer marca e tipo.
 
+Dá para reservar **mais de um andar para a mesma coisa**: dois andares de
+MultFila seguidos funcionam como um só, e o que não cabe no primeiro desce para
+o segundo. Um produto reservado só sai da estante quando todos os andares que o
+aceitam estão cheios — ele nunca vai parar num andar que a regra não permite.
+
 Marca, tipo e cor se combinam com **e**, o que sozinho não daria conta de
 *"andar 1 = só PLA preto, mas qualquer PLA Matte"*: marcar Preto limitaria o
 Matte a preto também. Para isso existe **Cores por tipo**, logo abaixo das
@@ -195,7 +200,7 @@ Estante, a segunda missão, numa aba própria:
 - ✅ Conferência de dois rolos por célula, nunca pedindo mais do que há no
   depósito, e lista de reposição na ordem de leitura da prateleira.
 
-A suíte cobre a lógica pura: **455 testes em 18 arquivos**, todos verdes.
+A suíte cobre a lógica pura: **458 testes em 18 arquivos**, todos verdes.
 
 ### Guia de corte
 

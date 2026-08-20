@@ -274,59 +274,60 @@ export function alocarEstante(
 
   const largura = (p: ProdutoEstante) => larguraDe(p.codigo, larguras, colunas)
 
-  // 1. Reparte: quem tem andar reservado vai para la; o resto fica no bolo.
+  // 1+2. Andares reservados. Escolher o andar e encaixar sao a MESMA etapa:
+  // separadas, o produto ficava preso ao primeiro andar que o aceitava e era
+  // descartado se ele estivesse cheio, mesmo com outro andar reservado ao
+  // mesmo conteudo vazio ao lado.
   const andaresComRegra = uteis.filter((a) => {
     const regra = regraDoAndar(template, a)
     return regra !== undefined && !regraVazia(regra)
   })
 
-  const filaDoAndar = new Map<number, ProdutoEstante[]>()
+  const blocosPorAndar = new Map<number, Bloco[]>()
   const livres: ProdutoEstante[] = []
+  const usadoPorAndar = new Map<number, number>()
+  let semLugarNaRegra = 0
 
   for (const produto of produtosOrdenados) {
-    // O primeiro andar cuja regra o produto atende fica com ele.
-    const destino = andaresComRegra.find((a) =>
+    const aceitam = andaresComRegra.filter((a) =>
       produtoAtendeRegra(produto, regraDoAndar(template, a)!),
     )
-    if (destino === undefined) {
+    if (aceitam.length === 0) {
       livres.push(produto)
       continue
     }
-    const fila = filaDoAndar.get(destino) ?? []
-    fila.push(produto)
-    filaDoAndar.set(destino, fila)
+
+    // O primeiro andar reservado que ACEITE o produto e onde ele ainda CAIBA.
+    // A regra continua valendo nos dois sentidos: o produto so entra em andar
+    // que o aceita, e andar reservado so recebe quem atende a regra dele.
+    const w = largura(produto)
+    const destino = aceitam.find((a) => (usadoPorAndar.get(a) ?? 0) + w <= colunas)
+    if (destino === undefined) {
+      // Cheios todos os andares que o aceitam: nao vaza para um andar livre,
+      // senao a regra "o andar 1 so tem X" deixaria de valer.
+      paraFora(produto)
+      semLugarNaRegra++
+      continue
+    }
+
+    const blocos = blocosPorAndar.get(destino) ?? []
+    blocos.push({
+      codigo: produto.codigo,
+      classificacao: produto.classificacao,
+      largura: w,
+      estoque: produto.estoqueDeposito,
+    })
+    blocosPorAndar.set(destino, blocos)
+    usadoPorAndar.set(destino, (usadoPorAndar.get(destino) ?? 0) + w)
   }
 
-  const blocosPorAndar = new Map<number, Bloco[]>()
-
-  // 2. Andares com regra: cada um se vira com a propria fila.
-  for (const andar of andaresComRegra) {
-    const blocos: Bloco[] = []
-    let usado = 0
-    let sobraram = 0
-
-    for (const produto of filaDoAndar.get(andar) ?? []) {
-      const w = largura(produto)
-      if (usado + w > colunas) {
-        // Reservado para este andar e nao coube: nao vai vazar para outro,
-        // senao a regra "o andar 1 so tem X" deixaria de valer.
-        paraFora(produto)
-        sobraram++
-        continue
-      }
-      blocos.push({
-        codigo: produto.codigo,
-        classificacao: produto.classificacao,
-        largura: w,
-        estoque: produto.estoqueDeposito,
-      })
-      usado += w
-    }
-
-    if (sobraram > 0) {
-      avisos.push(`Andar ${andar}: ${sobraram} produto(s) da regra não couberam nele.`)
-    }
-    blocosPorAndar.set(andar, blocos)
+  if (semLugarNaRegra > 0) {
+    const lista = andaresComRegra.join(', ')
+    avisos.push(
+      andaresComRegra.length === 1
+        ? `Andar ${lista}: ${semLugarNaRegra} produto(s) da regra não couberam nele.`
+        : `${semLugarNaRegra} produto(s) não couberam em nenhum dos andares reservados a eles (${lista}).`,
+    )
   }
 
   // 3. Andares sem regra: o bolo, com a quebra por marca.

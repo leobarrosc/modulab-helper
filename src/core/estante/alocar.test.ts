@@ -452,6 +452,44 @@ describe('regras de andar', () => {
     expect(plano.avisos.join(' ')).toContain('Andar 1')
   })
 
+  it('o excedente procura OUTRO andar que tambem o aceite', () => {
+    // Dois andares reservados a mesma marca: o segundo existe justamente para
+    // receber o que nao coube no primeiro. Antes o produto ficava preso ao
+    // primeiro andar que o aceitava e sumia da estante com o andar vizinho
+    // vazio -- que e o que o usuario via ao alargar uma celula.
+    const soM: RegraAndar = { andar: 1, marcas: ['M'], tipos: [], cores: [] }
+    const soM2: RegraAndar = { andar: 2, marcas: ['M'], tipos: [], cores: [] }
+    const produtos = ['p1', 'p2', 'p3'].map((c) => produto(c, 'M', 'PLA', c))
+    const plano = alocarEstante(comRegra(3, 2, [soM, soM2]), produtos)
+
+    expect(mapa(plano)).toEqual(['1.1:p1', '1.2:p2', '2.1:p3'])
+    expect(plano.naoAlocados).toEqual([])
+  })
+
+  it('so sai da estante quando TODOS os andares que o aceitam estao cheios', () => {
+    const soM: RegraAndar = { andar: 1, marcas: ['M'], tipos: [], cores: [] }
+    const soM2: RegraAndar = { andar: 2, marcas: ['M'], tipos: [], cores: [] }
+    const produtos = ['p1', 'p2', 'p3', 'p4', 'p5'].map((c) => produto(c, 'M', 'PLA', c))
+    // 2 andares x 2 colunas = 4 vagas para 5 produtos.
+    const plano = alocarEstante(comRegra(4, 2, [soM, soM2]), produtos)
+
+    expect(celulasOcupadas(plano).map((c) => c.codigo)).toEqual(['p1', 'p2', 'p3', 'p4'])
+    expect(plano.naoAlocados.map((n) => n.codigo)).toEqual(['p5'])
+    // O andar 3 esta livre e vazio, mas nao aceita quem e da regra.
+    expect(plano.avisos.join(' ')).toContain('andares reservados')
+  })
+
+  it('a largura maior tambem empurra para o proximo andar da regra', () => {
+    const soM: RegraAndar = { andar: 1, marcas: ['M'], tipos: [], cores: [] }
+    const soM2: RegraAndar = { andar: 2, marcas: ['M'], tipos: [], cores: [] }
+    const produtos = ['p1', 'p2'].map((c) => produto(c, 'M', 'PLA', c, 9))
+    // "p1" ocupa 3 das 4 colunas; "p2" pede 3 e so cabe no andar seguinte.
+    const plano = alocarEstante(comRegra(3, 4, [soM, soM2]), produtos, { p1: 3, p2: 3 })
+
+    expect(mapa(plano)).toEqual(['1.1:p1', '2.1:p2'])
+    expect(plano.naoAlocados).toEqual([])
+  })
+
   it('regra em andar bloqueado e ignorada', () => {
     const produtos = [produto('a', 'M', 'PLA', 'PRETO')]
     const plano = alocarEstante(
