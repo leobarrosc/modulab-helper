@@ -80,11 +80,36 @@ export function ordenarParaAlocacao(
 }
 
 /**
+ * As cores que a regra exige DESTE tipo.
+ *
+ * Entrada ausente em `coresPorTipo` cai no padrao `cores`; entrada presente
+ * vence, inclusive vazia -- vazia e "qualquer cor deste tipo", que e como se
+ * escreve "so PLA preto, mas qualquer PLA Matte". Por isso o `!== undefined`
+ * explicito: um `||` trataria o array vazio como ausente e devolveria o padrao.
+ *
+ * A chave e casada NORMALIZADA, e nao crua, como todo identificador do modulo
+ * -- `PLA Matte/Fosco` e `pla matte/fosco` sao o mesmo tipo. Comparar cru
+ * deixaria a excecao em silencio: nada quebra, ela so nunca casa.
+ */
+export function coresDaRegraParaTipo(regra: RegraAndar, tipo: string): string[] {
+  const porTipo = regra.coresPorTipo
+  if (porTipo === undefined) return regra.cores
+
+  const alvo = normalizarTexto(tipo)
+  for (const [chave, cores] of Object.entries(porTipo)) {
+    if (normalizarTexto(chave) === alvo) return cores
+  }
+  return regra.cores
+}
+
+/**
  * `true` se o produto atende a regra do andar.
  *
  * Eixo com lista vazia aceita qualquer coisa; os eixos preenchidos sao um E.
  * A cor e comparada pela CHAVE da cor base, e nao pelo texto: uma regra de
  * `PRETO` pega tambem "PRETO FOSCO" e "Preto Fume Translucido".
+ *
+ * A cor exigida pode variar por tipo -- ver `coresDaRegraParaTipo`.
  */
 export function produtoAtendeRegra(produto: ProdutoEstante, regra: RegraAndar): boolean {
   const { marca, tipo, cor } = produto.classificacao
@@ -92,9 +117,10 @@ export function produtoAtendeRegra(produto: ProdutoEstante, regra: RegraAndar): 
   if (regra.marcas.length > 0 && !contem(regra.marcas, marca)) return false
   if (regra.tipos.length > 0 && !contem(regra.tipos, tipo)) return false
 
-  if (regra.cores.length > 0) {
+  const cores = coresDaRegraParaTipo(regra, tipo)
+  if (cores.length > 0) {
     const chave = identificarCor(cor).base?.chave ?? CHAVE_DESCONHECIDA
-    if (!regra.cores.includes(chave)) return false
+    if (!cores.includes(chave)) return false
   }
 
   return true
@@ -105,12 +131,47 @@ const contem = (lista: string[], valor: string): boolean => {
   return lista.some((item) => normalizarTexto(item) === alvo)
 }
 
-/** Largura do produto em colunas, limitada ao que a estante comporta. */
-function larguraDe(
-  codigo: string,
-  larguras: Record<string, number>,
-  colunas: number,
-): number {
+/**
+ * Quantas colunas os rolos que existem PRECISAM ocupar.
+ *
+ * `ceil`, e nao `floor`: a celula e o lugar do rolo, e o rolo que sobra da
+ * divisao tambem precisa de lugar. Com 3 rolos e 2 de profundidade sao duas
+ * colunas -- a segunda pela metade -- e nao uma coluna com o terceiro rolo no
+ * chao. `floor` daria 1 e deixaria o terceiro rolo sem casa na estante.
+ *
+ * Equivale a dizer que o "+" so libera enquanto `estoque > largura * fila`,
+ * ou seja, enquanto sobrar rolo fora do que a largura atual comporta.
+ * Nunca abaixo de 1: celula de largura 0 nao existe.
+ */
+export function larguraMaximaPeloEstoque(estoque: number, capacidadePorCelula: number): number {
+  const fila = Math.max(1, Math.trunc(capacidadePorCelula) || 1)
+  const rolos = Math.max(0, Math.trunc(estoque) || 0)
+  return Math.max(1, Math.ceil(rolos / fila))
+}
+
+/**
+ * `true` quando a celula reserva mais colunas do que os rolos existentes
+ * precisam.
+ *
+ * E o espelho exato de `larguraMaximaPeloEstoque`: enquanto a largura for a
+ * que os rolos pedem, nao ha o que avisar -- inclusive quando a ultima coluna
+ * fica pela metade, que e o arredondamento normal e nao um erro.
+ *
+ * O "+" ja impede criar esse estado; esta funcao existe para o caso em que o
+ * estoque caiu DEPOIS. A estante e fixa: um reimport com menos estoque nao
+ * encolhe a celula sozinho, so acende o aviso.
+ */
+export function excedeEstoque(largura: number, estoque: number, capacidadePorCelula: number): boolean {
+  const w = Math.max(1, Math.trunc(largura) || 1)
+  return w > larguraMaximaPeloEstoque(estoque, capacidadePorCelula)
+}
+
+/**
+ * Largura do produto em colunas: a que o usuario escolheu, ou 1. A estante e
+ * fixa -- nada aqui deriva do estoque; e o "+" do mapa que decide se da para
+ * multiplicar, nao esta funcao.
+ */
+function larguraDe(codigo: string, larguras: Record<string, number>, colunas: number): number {
   const pedida = Math.trunc(larguras[codigo] ?? 1)
   if (!Number.isFinite(pedida) || pedida < 1) return 1
   return Math.min(pedida, Math.max(1, colunas))
@@ -120,6 +181,7 @@ interface Bloco {
   codigo: string
   classificacao: ProdutoEstante['classificacao']
   largura: number
+  estoque: number
 }
 
 /** Os blocos de um andar mais as celulas vazias que sobram, em ordem de leitura. */
@@ -139,13 +201,22 @@ function celulasDoAndar(
       largura: bloco.largura,
       codigo: bloco.codigo,
       classificacao: bloco.classificacao,
+      estoque: bloco.estoque,
       bloqueada: false,
     })
     coluna += bloco.largura
   }
 
   while (coluna <= colunas) {
-    celulas.push({ andar, coluna, largura: 1, codigo: null, classificacao: null, bloqueada })
+    celulas.push({
+      andar,
+      coluna,
+      largura: 1,
+      codigo: null,
+      classificacao: null,
+      estoque: 0,
+      bloqueada,
+    })
     coluna++
   }
 
@@ -161,9 +232,10 @@ function celulasDoAndar(
  *
  * Duas coisas mudam o preenchimento:
  *
- * - **Largura**: um campeao de venda ocupa varias colunas seguidas. O bloco
- *   nunca e partido entre dois andares; se nao cabe no que sobrou, desce
- *   inteiro para o proximo.
+ * - **Largura**: um campeao de venda ocupa varias colunas seguidas, porque o
+ *   usuario alargou na mao -- o "+" so libera enquanto o estoque cobrir a
+ *   proxima coluna inteira. O bloco nunca e partido entre dois andares; se nao
+ *   cabe no que sobrou, desce inteiro para o proximo.
  * - **Regra de andar**: um andar com regra so recebe quem a atende, e quem a
  *   atende so vai para la. Os andares sem regra recebem o resto.
  *
@@ -242,7 +314,12 @@ export function alocarEstante(
         sobraram++
         continue
       }
-      blocos.push({ codigo: produto.codigo, classificacao: produto.classificacao, largura: w })
+      blocos.push({
+        codigo: produto.codigo,
+        classificacao: produto.classificacao,
+        largura: w,
+        estoque: produto.estoqueDeposito,
+      })
       usado += w
     }
 
@@ -288,7 +365,12 @@ export function alocarEstante(
     }
 
     const blocos = blocosPorAndar.get(andar) ?? []
-    blocos.push({ codigo: produto.codigo, classificacao: produto.classificacao, largura: w })
+    blocos.push({
+        codigo: produto.codigo,
+        classificacao: produto.classificacao,
+        largura: w,
+        estoque: produto.estoqueDeposito,
+      })
     blocosPorAndar.set(andar, blocos)
     usado += w
   }

@@ -6,6 +6,7 @@
  * a conferencia sobreviver a um produto que mudou de andar entre um export e
  * outro do Bling.
  */
+import { excedeEstoque } from './alocar'
 import type {
   Celula,
   ConferenciaCelula,
@@ -63,13 +64,21 @@ export function conferidosDaCelula(
 }
 
 /**
- * Quantos rolos cabem numa celula.
+ * Quantos rolos cabem numa celula -- limitado pelos que existem de fato.
  *
- * Um bloco de 3 colunas com 2 em fila guarda 6 rolos -- e por isso a conferencia
- * de um campeao de venda tem 6 caixinhas, e nao 2.
+ * Um bloco de 3 colunas com 2 em fila guarda 6 rolos, e por isso a conferencia
+ * de um campeao de venda tem 6 caixinhas e nao 2. Mas o estoque corta por cima:
+ * com 3 rolos numa celula de 2 colunas sao 3 caixinhas, e nao 4. A quarta seria
+ * uma posicao que ninguem pode preencher -- e, pior, entraria na reposicao como
+ * um rolo a buscar num deposito que nao tem.
+ *
+ * E a UNICA definicao de capacidade: as caixinhas do mapa, o alvo da reposicao
+ * e o total do progresso saem todos daqui, entao nao ha como divergirem.
  */
 export function capacidadeDaCelula(celula: Celula, capacidadePorCelula: number): number {
-  return Math.max(0, Math.trunc(celula.largura)) * Math.max(0, Math.trunc(capacidadePorCelula))
+  const fisica =
+    Math.max(0, Math.trunc(celula.largura)) * Math.max(0, Math.trunc(capacidadePorCelula))
+  return Math.min(fisica, Math.max(0, Math.trunc(celula.estoque)))
 }
 
 /**
@@ -127,6 +136,7 @@ export function itensReposicao(
       coluna: celula.coluna,
       faltam,
       estoqueDeposito: produto?.estoqueDeposito ?? 0,
+      excedeEstoque: excedeEstoque(celula.largura, produto?.estoqueDeposito ?? 0, capacidade),
     })
   }
 

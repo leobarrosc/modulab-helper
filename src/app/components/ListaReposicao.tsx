@@ -29,6 +29,7 @@ export default function ListaReposicao({
 
   const totalRolos = itens.reduce((s, i) => s + i.faltam, 0)
   const semEstoque = itens.filter((i) => i.estoqueDeposito === 0)
+  const excedem = itens.filter((i) => i.excedeEstoque)
 
   return (
     <div className="reposicao">
@@ -44,6 +45,14 @@ export default function ListaReposicao({
       {semEstoque.length > 0 && (
         <p className="aviso">
           {semEstoque.length} produto(s) sem estoque no depósito: não dá para repor agora.
+        </p>
+      )}
+
+      {excedem.length > 0 && (
+        <p className="aviso">
+          {excedem.length} posição(ões) pedem mais rolos do que existe no depósito: a largura da
+          célula foi aumentada à mão além do que o estoque comporta. Diminua a largura no mapa ou
+          conte com uma célula que fica pela metade.
         </p>
       )}
 
@@ -69,7 +78,14 @@ export default function ListaReposicao({
             return (
               <tr
                 key={item.codigo}
-                className={item.estoqueDeposito === 0 ? 'sem-estoque' : undefined}
+                className={
+                  [
+                    item.estoqueDeposito === 0 ? 'sem-estoque' : '',
+                    item.excedeEstoque ? 'excede-estoque' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
               >
                 <td className="mono">
                   {item.andar}.{item.coluna}
@@ -86,7 +102,17 @@ export default function ListaReposicao({
                     {item.classificacao.cor || 'Sem cor'}
                   </span>
                 </td>
-                <td className="num">{item.faltam}</td>
+                <td
+                  className="num"
+                  title={
+                    item.excedeEstoque
+                      ? `A célula pede ${item.faltam} e o depósito tem ${item.estoqueDeposito}.`
+                      : undefined
+                  }
+                >
+                  {item.faltam}
+                  {item.excedeEstoque && <span aria-hidden="true"> !</span>}
+                </td>
                 <td className="num">
                   {item.estoqueDeposito === 0 ? <strong>0</strong> : item.estoqueDeposito}
                 </td>

@@ -12,14 +12,17 @@ import {
 import { criarEstante } from './template'
 import type { EstadoConferencia, ProdutoEstante } from './tipos'
 
-const produto = (codigo: string, cor: string, estoque = 5): ProdutoEstante => ({
+const produto = (codigo: string, cor: string, estoque = 6): ProdutoEstante => ({
   codigo,
   descricao: `FILAMENTO PLA ${cor}`,
   classificacao: { marca: 'MultFila', tipo: 'PLA', cor },
   estoqueDeposito: estoque,
 })
 
-const PRODUTOS = [produto('a', 'PRETO'), produto('b', 'BRANCO', 0)]
+// Estoque 6 de proposito: a capacidade e cortada pelo estoque, e um fixture
+// curto faria estes testes medirem o corte em vez do que eles querem medir.
+// O corte tem bloco proprio, mais abaixo.
+const PRODUTOS = [produto('a', 'PRETO'), produto('b', 'BRANCO')]
 const TEMPLATE = criarEstante({ andares: 2, colunas: 2, capacidadePorCelula: 2 })
 const PLANO = alocarEstante(TEMPLATE, PRODUTOS)
 const POR_CODIGO = new Map(PRODUTOS.map((p) => [p.codigo, p]))
@@ -105,7 +108,7 @@ describe('itensReposicao', () => {
     const itens = itensReposicao(PLANO, vazia(), 2, POR_CODIGO)
     const b = itens.find((i) => i.codigo === 'b')
 
-    expect(b).toMatchObject({ andar: 1, coluna: 2, estoqueDeposito: 0 })
+    expect(b).toMatchObject({ andar: 1, coluna: 2, estoqueDeposito: 6 })
     expect(b?.descricao).toBe('FILAMENTO PLA BRANCO')
   })
 
@@ -121,6 +124,58 @@ describe('itensReposicao', () => {
   it('aguenta produto que sumiu do mapa de produtos', () => {
     const itens = itensReposicao(PLANO, vazia(), 2, new Map())
     expect(itens[0]).toMatchObject({ descricao: '', estoqueDeposito: 0 })
+  })
+
+  it('marca a linha em que a largura manual passou do que ha no deposito', () => {
+    // "x" tem 1 rolo e ganhou 3 colunas na mao: 6 vagas fisicas para 1 rolo.
+    const larga = criarEstante({ andares: 1, colunas: 6, capacidadePorCelula: 2 })
+    const produtos = [produto('x', 'PRETO', 1), produto('y', 'BRANCO', 4)]
+    const plano = alocarEstante(larga, produtos, { x: 3 })
+    const porCodigo = new Map(produtos.map((p) => [p.codigo, p]))
+    const itens = itensReposicao(plano, vazia(), 2, porCodigo)
+
+    // faltam 1, e nao 6: a conferencia so pede o rolo que existe.
+    expect(itens.find((i) => i.codigo === 'x')).toMatchObject({
+      faltam: 1,
+      excedeEstoque: true,
+    })
+    // "y" ficou na largura 1: 2 lugares para 4 rolos, nada a sinalizar.
+    expect(itens.find((i) => i.codigo === 'y')?.excedeEstoque).toBe(false)
+  })
+})
+
+describe('a capacidade e cortada pelo estoque', () => {
+  const TEMPLATE_2 = criarEstante({ andares: 1, colunas: 4, capacidadePorCelula: 2 })
+
+  const capacidadeDe = (estoque: number, largura: number): number => {
+    const produtos = [produto('p', 'PRETO', estoque)]
+    const plano = alocarEstante(TEMPLATE_2, produtos, { p: largura })
+    const celula = plano.celulas.find((c) => c.codigo === 'p')!
+    return capacidadeDaCelula(celula, TEMPLATE_2.capacidadePorCelula)
+  }
+
+  it('3 rolos numa celula de 2 colunas dao 3 caixinhas, e nao 4', () => {
+    // A quarta seria uma posicao que ninguem pode preencher, e entraria na
+    // reposicao como um rolo a buscar num deposito que nao tem.
+    expect(capacidadeDe(3, 2)).toBe(3)
+  })
+
+  it('nao corta quando o estoque cobre as vagas fisicas', () => {
+    expect(capacidadeDe(4, 2)).toBe(4)
+    expect(capacidadeDe(9, 2)).toBe(4)
+  })
+
+  it('corta tambem a celula de largura 1', () => {
+    expect(capacidadeDe(1, 1)).toBe(1)
+    expect(capacidadeDe(2, 1)).toBe(2)
+  })
+
+  it('a reposicao nunca pede mais rolos do que existem', () => {
+    const produtos = [produto('p', 'PRETO', 3)]
+    const plano = alocarEstante(TEMPLATE_2, produtos, { p: 2 })
+    const itens = itensReposicao(plano, vazia(), 2, new Map(produtos.map((p) => [p.codigo, p])))
+
+    expect(itens[0]?.faltam).toBe(3)
   })
 })
 

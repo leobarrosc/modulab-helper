@@ -52,8 +52,13 @@ export function regraVazia(regra: {
   marcas: string[]
   tipos: string[]
   cores: string[]
+  coresPorTipo?: Record<string, string[]>
 }): boolean {
-  return regra.marcas.length === 0 && regra.tipos.length === 0 && regra.cores.length === 0
+  if (regra.marcas.length > 0 || regra.tipos.length > 0 || regra.cores.length > 0) return false
+  // Excecao vazia nao restringe nada: com `cores` tambem vazio, so sobrou
+  // ruido de storage. Uma excecao PREENCHIDA, sozinha, ja e uma regra
+  // ("qualquer tipo, mas PLA so preto") e nao pode ser descartada aqui.
+  return Object.values(regra.coresPorTipo ?? {}).every((c) => c.length === 0)
 }
 
 /** `true` se o andar (base 1) recebe produto. */

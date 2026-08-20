@@ -26,6 +26,51 @@ describe('lerTemplate', () => {
     expect(lerTemplate(templateBom)).toEqual(templateBom)
   })
 
+  it('preserva a excecao de cor por tipo, inclusive o array vazio', () => {
+    // O array vazio e "qualquer cor deste tipo". Descarta-lo faria o tipo
+    // voltar a herdar o `cores` padrao -- o oposto do que foi pedido.
+    const comExcecao = {
+      ...templateBom,
+      regrasAndar: [
+        {
+          andar: 1,
+          marcas: [],
+          tipos: ['PLA', 'PLA Matte/Fosco'],
+          cores: ['PRETO'],
+          coresPorTipo: { 'PLA MATTE/FOSCO': [] },
+        },
+      ],
+    }
+
+    expect(lerTemplate(comExcecao)?.regrasAndar[0]?.coresPorTipo).toEqual({
+      'PLA MATTE/FOSCO': [],
+    })
+  })
+
+  it('regra antiga, sem o campo, continua sem ele', () => {
+    expect(lerTemplate(templateBom)?.regrasAndar[0]).not.toHaveProperty('coresPorTipo')
+  })
+
+  it('uma excecao preenchida sozinha ja e regra, e nao e descartada', () => {
+    const soExcecao = {
+      ...templateBom,
+      regrasAndar: [
+        { andar: 2, marcas: [], tipos: [], cores: [], coresPorTipo: { PLA: ['PRETO'] } },
+      ],
+    }
+
+    expect(lerTemplate(soExcecao)?.regrasAndar).toHaveLength(1)
+  })
+
+  it('excecao so com listas vazias nao restringe nada e cai fora', () => {
+    const inutil = {
+      ...templateBom,
+      regrasAndar: [{ andar: 2, marcas: [], tipos: [], cores: [], coresPorTipo: { PLA: [] } }],
+    }
+
+    expect(lerTemplate(inutil)?.regrasAndar).toEqual([])
+  })
+
   it('recusa o que nem id tem -- sem id nao da para casar a conferencia', () => {
     expect(lerTemplate({ ...templateBom, id: '' })).toBeNull()
     expect(lerTemplate(null)).toBeNull()

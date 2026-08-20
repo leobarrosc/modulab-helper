@@ -172,6 +172,12 @@ export default function EstanteTemplateForm() {
         </p>
       )}
 
+      <p className="dica">
+        Toda célula nasce com 1 coluna. O + no mapa multiplica, mas só enquanto o depósito
+        tiver estoque para encher a coluna seguinte por inteiro — sem estoque suficiente, o
+        botão fica desabilitado.
+      </p>
+
       <div className="estante-listas">
         <fieldset className="grupo-caixas">
           <legend>Marcas desta estante</legend>

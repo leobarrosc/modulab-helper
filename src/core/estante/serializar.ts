@@ -9,6 +9,7 @@
  * aqui evita que o modulo de estante passe a depender do de etiqueta, que nao
  * tem nada a ver com prateleira.
  */
+import { normalizarTexto } from './texto'
 import { ESTANTE_PADRAO, LIMITES_ESTANTE, regraVazia } from './template'
 import type {
   ConferenciaCelula,
@@ -79,11 +80,14 @@ function lerRegrasAndar(bruto: unknown): RegraAndar[] {
     const andar = num(item['andar'], 0, 0, LIMITES_ESTANTE.andares.max)
     if (andar < 1 || vistos.has(andar)) continue
 
+    const coresPorTipo = lerCoresPorTipo(item['coresPorTipo'])
     const regra: RegraAndar = {
       andar,
       marcas: lerOrdemNomes(item['marcas']),
       tipos: lerOrdemNomes(item['tipos']),
       cores: lerOrdemNomes(item['cores']),
+      // So grava a chave quando ha excecao: regra antiga continua sem o campo.
+      ...(Object.keys(coresPorTipo).length > 0 ? { coresPorTipo } : {}),
     }
     // Regra que nao restringe nada nao precisa ocupar espaco no storage.
     if (regraVazia(regra)) continue
@@ -93,6 +97,28 @@ function lerRegrasAndar(bruto: unknown): RegraAndar[] {
   }
 
   return regras.sort((a, b) => a.andar - b.andar)
+}
+
+/**
+ * As excecoes de cor por tipo.
+ *
+ * O array VAZIO e preservado de proposito: e ele que diz "qualquer cor deste
+ * tipo", e descarta-lo faria o tipo voltar a herdar o `cores` padrao -- que e
+ * exatamente o oposto do que o usuario pediu ao criar a excecao.
+ */
+function lerCoresPorTipo(bruto: unknown): Record<string, string[]> {
+  if (!eObjeto(bruto)) return {}
+
+  const porTipo: Record<string, string[]> = {}
+  for (const [chave, valor] of Object.entries(bruto)) {
+    if (!Array.isArray(valor)) continue
+    // Normaliza na entrada, que e a fronteira: duas grafias do mesmo tipo nao
+    // podem virar duas excecoes, e a primeira vence, como em `nomesDistintos`.
+    const limpa = normalizarTexto(texto(chave, '', 200))
+    if (limpa === '' || limpa in porTipo) continue
+    porTipo[limpa] = lerOrdemNomes(valor)
+  }
+  return porTipo
 }
 
 /** Lista de inteiros positivos, sem repetir e em ordem. */

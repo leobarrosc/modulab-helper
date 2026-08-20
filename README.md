@@ -83,11 +83,30 @@ branco e matte"*. A reserva vale nos dois sentidos — o andar só recebe o que
 você marcou, e o que você marcou não aparece em nenhum outro andar. Marcar só as
 cores limita a cor e aceita qualquer marca e tipo.
 
+Marca, tipo e cor se combinam com **e**, o que sozinho não daria conta de
+*"andar 1 = só PLA preto, mas qualquer PLA Matte"*: marcar Preto limitaria o
+Matte a preto também. Para isso existe **Cores por tipo**, logo abaixo das
+cores: marque o tipo que precisa de regra própria e escolha as cores dele. Um
+tipo com cores próprias ignora as cores gerais; um tipo sem exceção continua
+seguindo elas. Marcar o tipo e não escolher cor nenhuma significa *"qualquer cor
+deste tipo"* — que é a outra forma de escrever a mesma regra.
+
 ### Frente maior para quem vende mais
 
 O PLA Preto não precisa dividir a prateleira em pé de igualdade com uma cor que
 sai uma vez por mês. Os botões **−** e **+** no canto de cada célula esticam o
 produto por várias colunas: o Preto em 1.1, 1.2 e 1.3 vira um bloco só.
+
+**A estante é fixa.** Toda célula nasce com uma coluna e só muda quando você
+clica — nada se reorganiza sozinho a cada export.
+
+O **+** só libera enquanto sobrar rolo fora do que a largura atual comporta. Com
+3 rolos e 2 por célula ele vai até 2 colunas: a primeira leva dois rolos, a
+segunda leva o terceiro. Com 1 rolo o botão já nasce desabilitado, e diz por
+quê — não faz sentido reservar meia prateleira para um filamento que existe uma
+vez. Quando o estoque cai *depois* de você ter alargado, a célula não encolhe
+sozinha (a estante é fixa): aparece um aviso na célula, e a decisão de diminuir
+é sua.
 
 A conferência acompanha: um bloco de 3 colunas com 2 rolos em fila tem 6
 caixinhas, não 2. E o bloco nunca é partido entre dois andares — se não cabe no
@@ -102,6 +121,12 @@ par marca + tipo.
 Cada célula cabe **dois rolos do mesmo produto**: o da frente é o mostruário, o
 de trás é a reposição imediata. São duas caixas de seleção por célula, então dá
 para registrar "só sobrou um" — e a lista de reposição já sabe que falta um.
+
+**As caixinhas nunca passam do que existe no depósito.** Um produto com 3 rolos
+numa célula de 2 colunas mostra 3 caixinhas, não 4: a quarta seria uma posição
+que ninguém consegue preencher, e entraria na lista de reposição como um rolo a
+buscar num depósito que não tem. Com um rolo só, aparece uma caixinha —
+marcada **F**, porque o lugar dele é a frente.
 
 A conferência fica guardada e sobrevive a fechar a aba. *Nova conferência* zera
 tudo e carimba a data. Produto **sem estoque no depósito sai da estante** e os
@@ -132,10 +157,14 @@ Estante, a segunda missão, numa aba própria:
 - ✅ Classificação Marca › Tipo › Cor deduzida do CSV, com correção manual.
 - ✅ Ordem das marcas, dos tipos e das cores, arrastáveis e persistidas.
 - ✅ Várias estantes, marcas por estante, andares fora de uso e reservados.
-- ✅ Largura de célula por produto, conferência de dois rolos e lista de
-  reposição na ordem de leitura da prateleira.
+- ✅ Andar reservado com **exceção de cor por tipo** — *"só PLA preto, mas
+  qualquer PLA Matte"*.
+- ✅ Largura de célula por produto, limitada pelo estoque real, e aviso quando
+  o estoque cai depois.
+- ✅ Conferência de dois rolos por célula, nunca pedindo mais do que há no
+  depósito, e lista de reposição na ordem de leitura da prateleira.
 
-A suíte cobre a lógica pura: **433 testes em 18 arquivos**, todos verdes.
+A suíte cobre a lógica pura: **455 testes em 18 arquivos**, todos verdes.
 
 ### Guia de corte
 
@@ -232,11 +261,13 @@ Node 24 / npm 11).
 
 ```bash
 npm install
-npm run build
+npm run carregar
 ```
 
-Isso gera a pasta `dist/`. Carregue-a no navegador seguindo os passos 3–6 da
-Opção 1 acima, selecionando `dist/` em vez da pasta descompactada.
+Isso gera a pasta `dist/` e, na primeira vez, já abre o Explorador nela e o
+`edge://extensions` — falta só ativar o Modo do desenvolvedor e clicar em
+*Carregar sem compactação*. (`npm run build` sozinho também serve; aí carregue
+`dist/` seguindo os passos 3–6 da Opção 1.)
 
 ## Desenvolvimento
 
@@ -255,7 +286,17 @@ pasta no navegador (ver Opção 1 acima) e as alterações recarregam sozinhas.
 | `npm run build` | Checagem de tipos e build de produção |
 | `npm run typecheck` | Só a checagem de tipos |
 | `npm test` | Testes unitários de `src/core/` (Vitest) |
+| `npm run carregar` | Build limpo em `dist/` pronto para o navegador (ver abaixo) |
 | `node scripts/gerar-icones.mjs` | Regera os PNGs dos ícones (sem dependências) |
+
+O `npm run carregar` existe porque `npm run dev` e `npm run build` escrevem no
+**mesmo** `dist/`, e um `dist/` deixado pelo `dev` não carrega como extensão —
+o MV3 proíbe o script remoto que o HMR usa. Ele apaga o `dist/` antes de buildar
+e, na primeira vez, abre o Explorador na pasta certa e o `edge://extensions`.
+Nos builds seguintes não abre nada: o navegador lê o `dist/` do disco, então
+basta clicar no ícone de recarregar no card da extensão. Se você remover a
+extensão e precisar do passo a passo de novo, rode
+`npm run carregar -- --abrir`.
 
 ## Estrutura
 

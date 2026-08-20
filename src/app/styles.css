@@ -50,6 +50,17 @@ body {
   padding: 2.5rem 1.5rem 4rem;
 }
 
+/*
+ * A estante e o mapa de uma prateleira fisica de 12 colunas: a largura de
+ * leitura confortavel de 74rem, boa para o editor de etiqueta, espremia cada
+ * celula em ~87px numa tela larga enquanto sobrava meia tela vazia dos dois
+ * lados. O teto continua existindo -- sem ele, um monitor ultrawide esticaria
+ * os passos e a lista de reposicao junto.
+ */
+.shell-largo {
+  max-width: 108rem;
+}
+
 .cabecalho h1 {
   margin: 0;
   font-size: 1.7rem;
@@ -1495,6 +1506,18 @@ button.perigo {
   opacity: 0.7;
 }
 
+.regra-excecao {
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 2px solid var(--borda-forte);
+}
+
+/* Recuadas sob o nome do tipo: sao as cores DAQUELE tipo, e nao mais um eixo. */
+.regra-excecao .caixas {
+  margin-top: 0.3rem;
+  padding-left: 1.4rem;
+}
+
 /* ---------- estante: palavras ignoradas ---------- */
 
 .ignoradas {
@@ -1785,6 +1808,10 @@ button.perigo {
 }
 
 .andar-rotulo {
+  position: sticky;
+  left: 0;
+  width: max-content;
+  max-width: 100%;
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
@@ -1809,6 +1836,7 @@ button.perigo {
 
 .celula-estante {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.15rem;
   padding: 0.4rem 0.45rem;
   border: 1px solid var(--borda);
@@ -1862,6 +1890,8 @@ button.perigo {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  min-width: 0;
   gap: 0.3rem;
   font-size: 0.68rem;
   color: var(--tinta-fraca);
@@ -1871,6 +1901,9 @@ button.perigo {
 /* Controle de largura: discreto ate o ponteiro chegar na celula. */
 .largura-controle {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  justify-content: flex-end;
   align-items: center;
   gap: 0.15rem;
   opacity: 0;
@@ -1895,6 +1928,19 @@ button.perigo {
 .largura-valor {
   min-width: 0.8rem;
   text-align: center;
+}
+
+.largura-botao-wrap {
+  display: inline-flex;
+}
+
+.largura-trava {
+  flex-basis: 100%;
+  min-width: 0;
+  text-align: right;
+  font-size: 0.62rem;
+  line-height: 1.25;
+  color: var(--tinta-fraca);
 }
 
 .celula-checks {
@@ -1927,6 +1973,8 @@ button.perigo {
 
 /* Duas linhas: "MATE DUAL COLOR PRETO E VERMELHO" nao cabe em uma so. */
 .celula-cor {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1964,6 +2012,22 @@ button.perigo {
 .celula-esgotado {
   color: var(--vermelho);
   font-size: 0.68rem;
+}
+
+.celula-excede {
+  color: var(--alerta);
+  font-size: 0.68rem;
+}
+
+.mapa-avisos {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mapa-avisos .aviso {
+  margin: 0;
 }
 
 .nao-alocados {
@@ -2027,6 +2091,11 @@ button.perigo {
 
 .reposicao-tabela tr.sem-estoque td {
   color: var(--vermelho);
+}
+
+.reposicao-tabela tr.excede-estoque td.num {
+  color: var(--alerta);
+  font-weight: 600;
 }
 
 .reposicao-titulo-impressao {

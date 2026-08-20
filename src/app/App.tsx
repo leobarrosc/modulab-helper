@@ -32,7 +32,7 @@ export default function App() {
   const atual = ABAS.find((a) => a.id === abaAtiva) ?? ABAS[0]!
 
   return (
-    <main className="shell">
+    <main className={abaAtiva === 'estante' ? 'shell shell-largo' : 'shell'}>
       <header className="cabecalho">
         <h1>Modulab Helper</h1>
         <p className="sub">{atual.sub}</p>

@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { lerCsv, type Planilha } from '../csv'
-import { alocarEstante, celulasOcupadas, chaveGrupo, ordenarParaAlocacao } from './alocar'
+import {
+  alocarEstante,
+  celulasOcupadas,
+  chaveGrupo,
+  excedeEstoque,
+  larguraMaximaPeloEstoque,
+  ordenarParaAlocacao,
+} from './alocar'
 import { produtosDaEstante } from './elegibilidade'
 import { criarEstante } from './template'
 import type { ProdutoEstante, RegraAndar } from './tipos'
@@ -10,11 +17,19 @@ import type { ProdutoEstante, RegraAndar } from './tipos'
 const CSV_REAL = join(process.cwd(), 'produtos_2026-07-20-10-29-43.csv')
 const planilhaReal = (): Planilha => lerCsv(new Uint8Array(readFileSync(CSV_REAL)))
 
-const produto = (codigo: string, marca: string, tipo: string, cor: string): ProdutoEstante => ({
+const produto = (
+  codigo: string,
+  marca: string,
+  tipo: string,
+  cor: string,
+  estoque = 1,
+): ProdutoEstante => ({
   codigo,
   descricao: `${tipo} ${cor}`,
   classificacao: { marca, tipo, cor },
-  estoqueDeposito: 5,
+  // 1 de proposito: com 2 em fila a sugestao da 1 coluna, e os testes de ordem
+  // e de quebra por marca medem o layout, e nao a largura.
+  estoqueDeposito: estoque,
 })
 
 const estante = (andares: number, colunas: number) =>
@@ -292,6 +307,85 @@ describe('largura da celula', () => {
   })
 })
 
+describe('a estante e fixa: a largura nunca deriva do estoque sozinha', () => {
+  it('toda celula nasce com 1 coluna, estoque alto ou baixo', () => {
+    expect(celulasOcupadas(alocarEstante(estante(2, 6), [produto('a', 'M', 'PLA', 'X', 1)]))[0]
+      ?.largura).toBe(1)
+    expect(celulasOcupadas(alocarEstante(estante(2, 6), [produto('a', 'M', 'PLA', 'X', 42)]))[0]
+      ?.largura).toBe(1)
+  })
+
+  it('so a escolha manual muda a largura', () => {
+    const produtos = [produto('a', 'M', 'PLA', 'X', 9)]
+    const largura = (larguras?: Record<string, number>) =>
+      celulasOcupadas(alocarEstante(estante(2, 6), produtos, larguras))[0]?.largura
+
+    expect(largura()).toBe(1)
+    expect(largura({ a: 4 })).toBe(4)
+  })
+})
+
+describe('larguraMaximaPeloEstoque', () => {
+  it('e quantas colunas os rolos precisam ocupar -- ceil, nao floor', () => {
+    // 3 rolos com 2 de profundidade pedem 2 colunas: o terceiro precisa de
+    // lugar. Com floor daria 1 e o terceiro rolo ficaria sem casa.
+    expect(larguraMaximaPeloEstoque(1, 2)).toBe(1)
+    expect(larguraMaximaPeloEstoque(2, 2)).toBe(1)
+    expect(larguraMaximaPeloEstoque(3, 2)).toBe(2)
+    expect(larguraMaximaPeloEstoque(4, 2)).toBe(2)
+    expect(larguraMaximaPeloEstoque(9, 2)).toBe(5)
+  })
+
+  it('nunca devolve 0 -- celula de largura 0 nao existe', () => {
+    expect(larguraMaximaPeloEstoque(0, 2)).toBe(1)
+  })
+
+  it('libera exatamente enquanto sobrar rolo fora da largura atual', () => {
+    // O "+" pergunta `largura < max`, que equivale a `estoque > largura x fila`.
+    for (const [estoque, largura, cabe] of [
+      [2, 1, false],
+      [3, 1, true],
+      [4, 2, false],
+      [5, 2, true],
+    ] as const) {
+      expect(largura < larguraMaximaPeloEstoque(estoque, 2)).toBe(cabe)
+      expect(estoque > largura * 2).toBe(cabe)
+    }
+  })
+})
+
+describe('excedeEstoque', () => {
+  it('nunca acende na largura 1 de fabrica, mesmo com estoque impar', () => {
+    expect(excedeEstoque(1, 1, 2)).toBe(false)
+    expect(excedeEstoque(1, 0, 2)).toBe(false)
+  })
+
+  it('nao acende na ultima coluna pela metade, que e o arredondamento normal', () => {
+    // 3 rolos em 2 colunas: 4 lugares, 3 ocupados. Foi o "+" que permitiu, e
+    // acender aqui contradiria o proprio botao.
+    expect(excedeEstoque(2, 3, 2)).toBe(false)
+    expect(excedeEstoque(5, 9, 2)).toBe(false)
+  })
+
+  it('acende quando a largura passou do que os rolos pedem', () => {
+    // O caso da bandeira: 1 rolo numa celula de 3 colunas.
+    expect(excedeEstoque(3, 1, 2)).toBe(true)
+    // Estoque caiu depois: 2 rolos cabem em 1 coluna, entao a de 2 sobra.
+    // A largura de 2 so se justifica a partir de 3 rolos.
+    expect(excedeEstoque(2, 2, 2)).toBe(true)
+    expect(excedeEstoque(2, 3, 2)).toBe(false)
+  })
+
+  it('e o espelho exato do limite do botao +', () => {
+    for (let estoque = 0; estoque <= 10; estoque++) {
+      const max = larguraMaximaPeloEstoque(estoque, 2)
+      for (let largura = 1; largura <= 8; largura++) {
+        expect(excedeEstoque(largura, estoque, 2)).toBe(largura > max)
+      }
+    }
+  })
+})
+
 describe('regras de andar', () => {
   const comRegra = (andares: number, colunas: number, regras: RegraAndar[]) => ({
     ...estante(andares, colunas),
@@ -368,6 +462,92 @@ describe('regras de andar', () => {
     expect(celulasOcupadas(plano)[0]?.andar).toBe(2)
   })
 
+  it('cor por tipo: so PLA preto, mas qualquer PLA Matte', () => {
+    // O caso que motivou `coresPorTipo`: os tres eixos sao um E que vale para
+    // a regra inteira, entao marcar PRETO em `cores` limitaria o Matte a preto.
+    const regra: RegraAndar = {
+      andar: 1,
+      marcas: [],
+      tipos: ['PLA', 'PLA Matte/Fosco'],
+      cores: [],
+      coresPorTipo: { PLA: ['PRETO'] },
+    }
+
+    const produtos = [
+      produto('pla-preto', 'M', 'PLA', 'PRETO'),
+      produto('pla-azul', 'M', 'PLA', 'AZUL'),
+      produto('matte-preto', 'M', 'PLA Matte/Fosco', 'PRETO'),
+      produto('matte-verde', 'M', 'PLA Matte/Fosco', 'VERDE'),
+    ]
+    const plano = alocarEstante(comRegra(3, 6, [regra]), produtos)
+
+    const andar1 = celulasOcupadas(plano)
+      .filter((c) => c.andar === 1)
+      .map((c) => c.codigo)
+    expect(andar1).toEqual(['pla-preto', 'matte-preto', 'matte-verde'])
+    // O PLA azul nao atende a regra, entao cai no andar seguinte.
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'pla-azul')?.andar).toBe(2)
+  })
+
+  it('a excecao vazia vence o padrao, e nao herda dele', () => {
+    // A outra forma de escrever o mesmo: padrao PRETO, e Matte liberado.
+    const regra: RegraAndar = {
+      andar: 1,
+      marcas: [],
+      tipos: ['PLA', 'PLA Matte/Fosco'],
+      cores: ['PRETO'],
+      coresPorTipo: { 'PLA MATTE/FOSCO': [] },
+    }
+
+    const produtos = [
+      produto('pla-azul', 'M', 'PLA', 'AZUL'),
+      produto('matte-verde', 'M', 'PLA Matte/Fosco', 'VERDE'),
+    ]
+    const plano = alocarEstante(comRegra(3, 6, [regra]), produtos)
+
+    // Se o array vazio herdasse `cores`, o verde teria sido barrado.
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'matte-verde')?.andar).toBe(1)
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'pla-azul')?.andar).toBe(2)
+  })
+
+  it('a chave da excecao casa normalizada, como todo o resto do modulo', () => {
+    const regra: RegraAndar = {
+      andar: 1,
+      marcas: [],
+      tipos: [],
+      cores: [],
+      coresPorTipo: { 'pla matte/fosco': ['PRETO'] },
+    }
+
+    const produtos = [
+      produto('a', 'M', 'PLA Matte/Fosco', 'PRETO'),
+      produto('b', 'M', 'PLA Matte/Fosco', 'AZUL'),
+    ]
+    const plano = alocarEstante(comRegra(3, 6, [regra]), produtos)
+
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'a')?.andar).toBe(1)
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'b')?.andar).toBe(2)
+  })
+
+  it('tipo sem excecao continua caindo no padrao de cores', () => {
+    const regra: RegraAndar = {
+      andar: 1,
+      marcas: [],
+      tipos: [],
+      cores: ['PRETO'],
+      coresPorTipo: { PLA: ['AZUL'] },
+    }
+
+    const produtos = [
+      produto('petg-preto', 'M', 'PETG', 'PRETO'),
+      produto('petg-azul', 'M', 'PETG', 'AZUL'),
+    ]
+    const plano = alocarEstante(comRegra(3, 6, [regra]), produtos)
+
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'petg-preto')?.andar).toBe(1)
+    expect(celulasOcupadas(plano).find((c) => c.codigo === 'petg-azul')?.andar).toBe(2)
+  })
+
   it('regra vazia vale como andar sem regra', () => {
     const vazia: RegraAndar = { andar: 1, marcas: [], tipos: [], cores: [] }
     const produtos = [produto('a', 'M', 'PLA', 'AZUL')]
@@ -386,7 +566,7 @@ describe('com o arquivo real', () => {
     const ocupadas = celulasOcupadas(plano)
 
     expect(ocupadas).toHaveLength(11)
-    expect(ocupadas.every((c) => c.andar === 1)).toBe(true)
+    expect(ocupadas.every((c) => c.andar === 1 && c.largura === 1)).toBe(true)
     expect(plano.naoAlocados).toEqual([])
   })
 

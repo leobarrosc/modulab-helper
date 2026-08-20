@@ -74,6 +74,17 @@ export interface Celula {
   largura: number
   codigo: string | null
   classificacao: Classificacao | null
+  /**
+   * Quantos rolos existem, no instante em que o plano foi montado.
+   *
+   * Fica na celula, e nao so no `ProdutoEstante`, porque e o que permite
+   * `capacidadeDaCelula` limitar a conferencia sem que cada chamador tenha de
+   * carregar o mapa de produtos junto -- e uma definicao so, usada pelas
+   * caixinhas, pela reposicao e pelo progresso ao mesmo tempo.
+   *
+   * Derivado como todo o resto do plano: recalculado a cada render.
+   */
+  estoque: number
   /** Andar que o usuario tirou de uso: aparece na tela, mas nunca recebe produto. */
   bloqueada: boolean
 }
@@ -91,6 +102,19 @@ export interface RegraAndar {
   tipos: string[]
   /** Chaves de cor base (`PRETO`, `BRANCO`...), como em `CORES_CONHECIDAS`. */
   cores: string[]
+  /**
+   * Cor exigida de UM tipo especifico, sobrepondo `cores`. Chave:
+   * `normalizarTexto(tipo)`, como todo identificador do modulo.
+   *
+   * Existe porque os tres eixos sao um E que vale para a regra inteira, e
+   * "andar 1 = so PLA preto E qualquer PLA Matte" nao cabe nisso: marcar PRETO
+   * em `cores` limitaria o Matte a preto tambem.
+   *
+   * Entrada AUSENTE cai em `cores`; entrada PRESENTE e vazia significa
+   * "qualquer cor deste tipo" -- e a distincao que sustenta o exemplo acima,
+   * entao nao troque o `??` por um `||` nem descarte array vazio ao gravar.
+   */
+  coresPorTipo?: Record<string, string[]>
 }
 
 export interface ItemNaoAlocado {
@@ -134,4 +158,11 @@ export interface ItemReposicao {
   /** Quantas unidades faltam para a celula ficar cheia. */
   faltam: number
   estoqueDeposito: number
+  /**
+   * `true` quando a largura foi aumentada a mao alem do que o deposito
+   * comporta -- por exemplo, um reimport que trouxe menos estoque do que
+   * quando a celula foi alargada. A estante e fixa: o app nao encolhe a
+   * celula sozinho, so avisa.
+   */
+  excedeEstoque: boolean
 }

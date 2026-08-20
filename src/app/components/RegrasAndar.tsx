@@ -1,4 +1,11 @@
-import { CHAVE_DESCONHECIDA, corPorChave, regraVazia, type TemplateEstante } from '@/core/estante'
+import {
+  CHAVE_DESCONHECIDA,
+  corPorChave,
+  normalizarTexto,
+  regraVazia,
+  type RegraAndar as Regra,
+  type TemplateEstante,
+} from '@/core/estante'
 import Icone from './Icone'
 import { useApp } from '../store'
 
@@ -52,6 +59,50 @@ function Escolhas({
   )
 }
 
+const nomeDaCor = (chave: string): string =>
+  chave === CHAVE_DESCONHECIDA ? 'Multicolor' : (corPorChave(chave)?.nome ?? chave)
+
+/** O resumo do cabecalho, que precisa citar a excecao para nao mentir. */
+function resumoDaRegra(regra: Regra): string {
+  const excecoes = Object.entries(regra.coresPorTipo ?? {}).map(([, cores]) =>
+    cores.length === 0 ? 'qualquer cor' : cores.map(nomeDaCor).join('/'),
+  )
+
+  return [
+    regra.marcas.join(', '),
+    regra.tipos.join(', '),
+    regra.cores.map(nomeDaCor).join(', '),
+    excecoes.length > 0 ? `${excecoes.length} exceção(ões) por tipo` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+/**
+ * Os tipos que valem excecao neste andar: os escolhidos na regra, ou todos os
+ * do CSV quando a regra aceita qualquer tipo.
+ *
+ * Um tipo com excecao gravada entra na lista mesmo se sair da regra depois --
+ * senao a excecao ficaria invisivel e sem como desligar.
+ */
+function tiposEmJogo(regra: Regra, todos: string[]): string[] {
+  const base = regra.tipos.length > 0 ? regra.tipos : todos
+  const vistos = new Set(base.map((t) => normalizarTexto(t)))
+  const orfaos = todos.filter(
+    (t) => !vistos.has(normalizarTexto(t)) && normalizarTexto(t) in (regra.coresPorTipo ?? {}),
+  )
+  return [...base, ...orfaos]
+}
+
+/**
+ * Sem excecao nenhuma o campo sai da regra, em vez de virar `{}` -- e o que
+ * mantem uma regra antiga gravada exatamente como era.
+ */
+function comExcecoes(regra: Regra, coresPorTipo: Record<string, string[]>): Regra {
+  const { coresPorTipo: _antigo, ...resto } = regra
+  return Object.keys(coresPorTipo).length > 0 ? { ...resto, coresPorTipo } : resto
+}
+
 /**
  * O que cada andar aceita.
  *
@@ -101,6 +152,32 @@ export default function RegrasAndar({
     })
   }
 
+  /** Liga/desliga a excecao de um tipo. Ligada nasce vazia = qualquer cor. */
+  const alternarExcecao = (andar: number, tipo: string) => {
+    const regra = regraDe(andar)
+    const chave = normalizarTexto(tipo)
+    const atual = { ...(regra.coresPorTipo ?? {}) }
+
+    if (chave in atual) delete atual[chave]
+    else atual[chave] = []
+
+    definirRegraAndar(estante.id, comExcecoes(regra, atual))
+  }
+
+  /** Marca/desmarca uma cor DENTRO da excecao de um tipo. */
+  const alternarCorDoTipo = (andar: number, tipo: string, chaveCor: string) => {
+    const regra = regraDe(andar)
+    const chave = normalizarTexto(tipo)
+    const atual = { ...(regra.coresPorTipo ?? {}) }
+    const cores = atual[chave] ?? []
+
+    atual[chave] = cores.includes(chaveCor)
+      ? cores.filter((c) => c !== chaveCor)
+      : [...cores, chaveCor]
+
+    definirRegraAndar(estante.id, comExcecoes(regra, atual))
+  }
+
   return (
     <div className="regras-andar">
       <p className="dica">
@@ -118,15 +195,7 @@ export default function RegrasAndar({
             <summary>
               <strong>Andar {andar}</strong>
               <span className="dica">
-                {livre
-                  ? 'o que couber'
-                  : [
-                      regra.marcas.join(', '),
-                      regra.tipos.join(', '),
-                      regra.cores.map((c) => corPorChave(c)?.nome ?? c).join(', '),
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+                {livre ? 'o que couber' : resumoDaRegra(regra)}
               </span>
               {!livre && (
                 <button
@@ -165,6 +234,67 @@ export default function RegrasAndar({
               }
               amostra={(c) => corPorChave(c)?.hex ?? null}
             />
+
+            {tiposEmJogo(regra, tipos).length > 0 && (
+              <div className="regra-eixo">
+                <span className="campo-rotulo">Cores por tipo</span>
+                <p className="dica">
+                  Um tipo com cores próprias ignora as Cores acima. É como se escreve “só PLA
+                  preto, mas qualquer PLA Matte”.
+                </p>
+
+                {tiposEmJogo(regra, tipos).map((tipo) => {
+                  const excecao = regra.coresPorTipo?.[normalizarTexto(tipo)]
+                  const ligada = excecao !== undefined
+
+                  return (
+                    <div key={tipo} className="regra-excecao">
+                      <label className="checa">
+                        <input
+                          type="checkbox"
+                          checked={ligada}
+                          onChange={() => alternarExcecao(andar, tipo)}
+                        />
+                        <span>
+                          <strong>{tipo}</strong>
+                          {!ligada && <em className="dica"> · usa as Cores acima</em>}
+                          {ligada && excecao.length === 0 && (
+                            <em className="dica"> · qualquer cor</em>
+                          )}
+                        </span>
+                      </label>
+
+                      {ligada && (
+                        <div className="caixas">
+                          {cores.map((c) => {
+                            const hex = corPorChave(c)?.hex ?? null
+                            return (
+                              <label key={c} className="checa">
+                                <input
+                                  type="checkbox"
+                                  checked={excecao.includes(c)}
+                                  onChange={() => alternarCorDoTipo(andar, tipo, c)}
+                                />
+                                <span
+                                  className={hex ? 'bolinha-cor' : 'bolinha-cor sem-cor'}
+                                  style={hex ? { background: hex } : undefined}
+                                  aria-hidden="true"
+                                />
+                                <span>
+                                  {c === CHAVE_DESCONHECIDA
+                                    ? 'Multicolor'
+                                    : (corPorChave(c)?.nome ?? c)}
+                                </span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </details>
         )
       })}
