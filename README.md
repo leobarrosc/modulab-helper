@@ -10,6 +10,37 @@ exportado do Bling, em duas abas:
 
 As duas compartilham o mesmo CSV importado, e nada além dele.
 
+## Instalação
+
+### Opção 1 — baixar pronto (recomendado para quem só quer usar)
+
+Não precisa instalar Node nem rodar nenhum comando.
+
+1. Baixe `modulab-helper-dist.zip` na [última release](https://github.com/leobarrosc/modulab-helper/releases/latest).
+2. Descompacte o zip — vira uma pasta com `manifest.json` dentro.
+3. Abra `chrome://extensions` (ou `edge://extensions`).
+4. Ative **Modo do desenvolvedor**.
+5. Clique em **Carregar sem compactação** e selecione a pasta descompactada.
+6. Clique no ícone da extensão na barra de ferramentas: o app abre em uma aba nova.
+
+Clicar no ícone de novo com a aba já aberta apenas foca a aba existente, em vez
+de abrir duplicatas.
+
+### Opção 2 — build a partir do código-fonte
+
+Para quem vai mexer no código. Requer Node 20+ (desenvolvimento e CI rodam em
+Node 24 / npm 11).
+
+```bash
+npm install
+npm run carregar
+```
+
+Isso gera a pasta `dist/` e, na primeira vez, já abre o Explorador nela e o
+`edge://extensions` — falta só ativar o Modo do desenvolvedor e clicar em
+*Carregar sem compactação*. (`npm run build` sozinho também serve; aí carregue
+`dist/` seguindo os passos 3–6 da Opção 1.)
+
 ## A estante
 
 A prateleira fica à vista do cliente e, conforme vendem, é preciso repor. O
@@ -237,37 +268,6 @@ desmarcados.
 quantas colunas × linhas cabem nele, e a etiqueta se redimensiona. Uma A4 em
 3 × 8 com margem 5 mm e espaço 2 mm dá etiquetas de 65,3 × 34,1 mm, 24 por
 folha.
-
-## Instalação
-
-### Opção 1 — baixar pronto (recomendado para quem só quer usar)
-
-Não precisa instalar Node nem rodar nenhum comando.
-
-1. Baixe `modulab-helper-dist.zip` na [última release](https://github.com/leobarrosc/modulab-helper/releases/latest).
-2. Descompacte o zip — vira uma pasta com `manifest.json` dentro.
-3. Abra `chrome://extensions` (ou `edge://extensions`).
-4. Ative **Modo do desenvolvedor**.
-5. Clique em **Carregar sem compactação** e selecione a pasta descompactada.
-6. Clique no ícone da extensão na barra de ferramentas: o app abre em uma aba nova.
-
-Clicar no ícone de novo com a aba já aberta apenas foca a aba existente, em vez
-de abrir duplicatas.
-
-### Opção 2 — build a partir do código-fonte
-
-Para quem vai mexer no código. Requer Node 20+ (desenvolvimento e CI rodam em
-Node 24 / npm 11).
-
-```bash
-npm install
-npm run carregar
-```
-
-Isso gera a pasta `dist/` e, na primeira vez, já abre o Explorador nela e o
-`edge://extensions` — falta só ativar o Modo do desenvolvedor e clicar em
-*Carregar sem compactação*. (`npm run build` sozinho também serve; aí carregue
-`dist/` seguindo os passos 3–6 da Opção 1.)
 
 ## Desenvolvimento
 
