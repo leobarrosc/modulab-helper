@@ -137,6 +137,41 @@ describe('produtosDaEstante', () => {
     expect(avisos.join(' ')).toContain('10')
   })
 
+  it('avisa quando a Marca vazia deixa o produto fora do filtro', () => {
+    // O caso real: filamento ativo, com estoque, que o Bling gravou sem Marca.
+    // A lista de marcas da estante nao mostra "vazio", entao sem aviso ele
+    // sumiria do mapa sem explicacao e sem como incluir.
+    const { produtos, avisos } = produtosDaEstante(
+      planilhaDe([linha({ 'Código': '292', 'Marca': '' }), linha({ 'Código': '11' })]),
+      { raizCategoria: 'Filamentos', marcasPermitidas: ['MultFila'] },
+    )
+
+    expect(produtos.map((p) => p.codigo)).toEqual(['11'])
+    expect(avisos.join(' ')).toContain('292')
+    expect(avisos.join(' ')).toContain('sem Marca')
+  })
+
+  it('sem filtro de marca o produto sem Marca entra, e nao ha o que avisar', () => {
+    const { produtos, avisos } = produtosDaEstante(
+      planilhaDe([linha({ 'Código': '292', 'Marca': '' })]),
+      { raizCategoria: 'Filamentos' },
+    )
+
+    expect(produtos.map((p) => p.codigo)).toEqual(['292'])
+    expect(avisos.join(' ')).not.toContain('sem Marca')
+  })
+
+  it('nao avisa por Marca quando o produto ja estava fora por outro motivo', () => {
+    // Estoque zero: nao e o filtro de marca que o tirou, e apontar a Marca
+    // mandaria o usuario corrigir o campo errado.
+    const { avisos } = produtosDaEstante(
+      planilhaDe([linha({ 'Código': '292', 'Marca': '', 'Estoque': '0' })]),
+      { raizCategoria: 'Filamentos', marcasPermitidas: ['MultFila'] },
+    )
+
+    expect(avisos.join(' ')).not.toContain('sem Marca')
+  })
+
   it('descarta linha sem Código, que e a chave de tudo', () => {
     const { produtos, avisos } = produtosDaEstante(planilhaDe([linha({ 'Código': '' }), linha({ 'Código': '11' })]), { raizCategoria: 'Filamentos', correcoes: {} })
 

@@ -109,10 +109,22 @@ export function produtosDaEstante(
   const produtos: ProdutoEstante[] = []
   const avisos: string[] = []
   const vistos = new Set<string>()
+  const semMarca: string[] = []
   let semCodigo = 0
 
   for (const linha of planilha.linhas) {
-    if (!produtoElegivel(linha, raizCategoria, marcasPermitidas)) continue
+    if (!produtoElegivel(linha, raizCategoria, marcasPermitidas)) {
+      // Marca vazia no Bling nao aparece na lista de marcas da estante, entao
+      // nao ha caixinha para marcar: o produto sumiria do mapa sem o usuario
+      // ter como perceber, nem como incluir. Vale o mesmo cuidado do produto
+      // sem Codigo -- o silencio e que e o problema.
+      if (marcasPermitidas.length > 0 && produtoElegivel(linha, raizCategoria, [])) {
+        if (limpar(linha[COLUNA_MARCA] ?? '') === '') {
+          semMarca.push(codigoDaLinha(linha) || '(sem código)')
+        }
+      }
+      continue
+    }
 
     const codigo = codigoDaLinha(linha)
     if (codigo === '') {
@@ -136,6 +148,14 @@ export function produtosDaEstante(
   if (semCodigo > 0) {
     avisos.push(
       `${semCodigo} produto(s) sem Código ficaram de fora: é o Código que identifica a posição na estante.`,
+    )
+  }
+
+  if (semMarca.length > 0) {
+    avisos.push(
+      `${semMarca.length} produto(s) sem Marca no Bling ficaram de fora, porque esta estante ` +
+        `filtra por marca e não há marca para casar: ${semMarca.join(', ')}. ` +
+        `Preencha a Marca no Bling e reimporte, ou desmarque todas as marcas para aceitar todas.`,
     )
   }
 

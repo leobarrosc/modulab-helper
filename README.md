@@ -102,7 +102,9 @@ volta ao valor deduzido.
 
 Cada estante tem as suas medidas, a sua categoria e **as suas marcas**: dá para
 deixar MultFila e Creality numa e o resto noutra. Nenhuma marca escolhida
-significa "todas entram". A troca entre estantes fica no topo da aba, a um
+significa "todas entram". Um produto que o Bling gravou **sem Marca** não casa
+com marca nenhuma e fica de fora — e como não existe caixinha para "vazio", o
+app avisa nomeando o código, em vez de deixá-lo sumir em silêncio. A troca entre estantes fica no topo da aba, a um
 clique.
 
 Andares podem ser **tirados de uso** — a prateleira que você não alcança, a de
